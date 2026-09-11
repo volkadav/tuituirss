@@ -1,0 +1,10 @@
+{
+  "server_url": "https://tt-rss.example.com/tt-rss/api/",
+  "username": "your-user",
+  "data_dir": "~/.tuituirss",
+  "insecure": false,
+  "ca_file": null,
+  "timeout_sec": 30,
+  "debug": false,
+  "log_file": null
+}

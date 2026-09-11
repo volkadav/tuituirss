@@ -1,0 +1,16 @@
+# Build artifacts
+*.o
+*.d
+/tuituirss
+tests/unit/run
+tests/integration/run
+tests/fuzz/fuzz
+
+# Editor / OS noise
+*.swp
+*~
+.DS_Store
+
+# Local config / data (never commit secrets)
+tuituirssrc.json
+*.log

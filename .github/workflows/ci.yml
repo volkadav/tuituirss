@@ -1,0 +1,36 @@
+# SPDX-License-Identifier: MIT
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    # Run the job inside Debian stable (pin to a codename such as
+    # debian:trixie for reproducibility).
+    container:
+      image: debian:stable
+    steps:
+      # The minimal Debian image has no git, which actions/checkout needs.
+      - name: Bootstrap git and certificates
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends git ca-certificates
+      - uses: actions/checkout@v4
+      - name: Install build dependencies
+        run: |
+          apt-get install -y --no-install-recommends \
+            build-essential clang libclang-rt-dev pkg-config \
+            libcurl4-openssl-dev libjansson-dev libncurses-dev libssl-dev
+      - name: Build
+        run: make
+      - name: Unit tests
+        run: make test
+      - name: Unit tests (ASan + UBSan)
+        run: make asan
+      - name: Static analysis (-fanalyzer)
+        run: make analyze
+      - name: Fuzz (short run)
+        run: make fuzz FUZZ_TIME=30
