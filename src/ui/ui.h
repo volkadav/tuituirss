@@ -13,17 +13,17 @@
 
 /* ---- colour pairs ----------------------------------------------------- */
 enum {
-    CP_DEFAULT = 1,
-    CP_SELECTED,
-    CP_UNREAD,
-    CP_READ,
-    CP_TITLE,
-    CP_STATUS,
-    CP_ERROR,
-    CP_FEED,
-    CP_SECTION,
-    CP_STARRED,
-    CP_NOTE,
+  CP_DEFAULT = 1,
+  CP_SELECTED,
+  CP_UNREAD,
+  CP_READ,
+  CP_TITLE,
+  CP_STATUS,
+  CP_ERROR,
+  CP_FEED,
+  CP_SECTION,
+  CP_STARRED,
+  CP_NOTE,
 };
 
 /* ---- panes ------------------------------------------------------------ */
@@ -31,35 +31,35 @@ typedef enum { PANE_FEEDS = 0, PANE_HEADLINES, PANE_ARTICLE } Pane;
 
 /* ---- actions ---------------------------------------------------------- */
 typedef enum {
-    ACT_NONE = 0,
-    ACT_QUIT,
-    ACT_BACK,
-    ACT_DOWN,
-    ACT_UP,
-    ACT_FIRST,
-    ACT_LAST,
-    ACT_FOCUS_NEXT,
-    ACT_FOCUS_PREV,
-    ACT_OPEN,
-    ACT_TOGGLE_ARTICLE,
-    ACT_TOGGLE_READ,
-    ACT_TOGGLE_STAR,
-    ACT_TOGGLE_PUBLISH,
-    ACT_NEXT_UNREAD,
-    ACT_CATCHUP,
-    ACT_NOTE,
-    ACT_SCORE_UP,
-    ACT_SCORE_DOWN,
-    ACT_LABELS,
-    ACT_CYCLE_VIEW,
-    ACT_FILTER,
-    ACT_SUBSCRIBE,
-    ACT_UNSUBSCRIBE,
-    ACT_UPDATE_FEED,
-    ACT_TOGGLE_LAYOUT,
-    ACT_REFRESH,
-    ACT_HELP,
-    ACT_LOAD_MORE,
+  ACT_NONE = 0,
+  ACT_QUIT,
+  ACT_BACK,
+  ACT_DOWN,
+  ACT_UP,
+  ACT_FIRST,
+  ACT_LAST,
+  ACT_FOCUS_NEXT,
+  ACT_FOCUS_PREV,
+  ACT_OPEN,
+  ACT_TOGGLE_ARTICLE,
+  ACT_TOGGLE_READ,
+  ACT_TOGGLE_STAR,
+  ACT_TOGGLE_PUBLISH,
+  ACT_NEXT_UNREAD,
+  ACT_CATCHUP,
+  ACT_NOTE,
+  ACT_SCORE_UP,
+  ACT_SCORE_DOWN,
+  ACT_LABELS,
+  ACT_CYCLE_VIEW,
+  ACT_FILTER,
+  ACT_SUBSCRIBE,
+  ACT_UNSUBSCRIBE,
+  ACT_UPDATE_FEED,
+  ACT_TOGGLE_LAYOUT,
+  ACT_REFRESH,
+  ACT_HELP,
+  ACT_LOAD_MORE,
 } Action;
 
 #define CTX_GLOBAL 0x01u
@@ -70,91 +70,91 @@ typedef enum {
 
 /* ---- sidebar ---------------------------------------------------------- */
 typedef enum {
-    SI_SECTION, /* non-selectable header */
-    SI_ITEM,
+  SI_SECTION, /* non-selectable header */
+  SI_ITEM,
 } SidebarKind;
 
 typedef enum {
-    SRC_VIRTUAL,
-    SRC_LABEL,
-    SRC_CATEGORY,
-    SRC_FEED,
+  SRC_VIRTUAL,
+  SRC_LABEL,
+  SRC_CATEGORY,
+  SRC_FEED,
 } SidebarSource;
 
 typedef struct {
-    SidebarKind kind;
-    SidebarSource source;
-    int id; /* feed / category / label id */
-    char *title;
-    int unread;
-    int depth;
-    bool is_cat;
-    bool expanded;
+  SidebarKind kind;
+  SidebarSource source;
+  int id; /* feed / category / label id */
+  char *title;
+  int unread;
+  int depth;
+  bool is_cat;
+  bool expanded;
 } SidebarItem;
 
 /* ---- wrapped article line -------------------------------------------- */
 typedef struct {
-    char *text;
-    int attr;
+  char *text;
+  int attr;
 } ArtLine;
 
 /* ---- application state ------------------------------------------------ */
 typedef struct {
-    Config *cfg;
-    ApiClient *api;
+  Config *cfg;
+  ApiClient *api;
 
-    int rows, cols;
-    WINDOW *feed_win;
-    WINDOW *head_win;
-    WINDOW *art_win;
-    WINDOW *status_win;
-    int feed_w, right_w, main_h;
-    Pane focus;
-    bool article_only;
-    bool running;
-    bool need_resize;
+  int rows, cols;
+  WINDOW *feed_win;
+  WINDOW *head_win;
+  WINDOW *art_win;
+  WINDOW *status_win;
+  int feed_w, right_w, main_h;
+  Pane focus;
+  bool article_only;
+  bool running;
+  bool need_resize;
 
-    /* sidebar */
-    SidebarItem *items;
-    size_t nitems;
-    size_t items_cap;
-    int side_sel;
-    int side_top;
-    int side_rows;
+  /* sidebar */
+  SidebarItem *items;
+  size_t nitems;
+  size_t items_cap;
+  int side_sel;
+  int side_top;
+  int side_rows;
 
-    /* headlines */
-    Headline *heads;
-    size_t nheads;
-    int head_sel;
-    int head_top;
-    int head_rows;
-    int head_limit;
-    bool head_has_more;
-    int head_total_loaded;
+  /* headlines */
+  Headline *heads;
+  size_t nheads;
+  int head_sel;
+  int head_top;
+  int head_rows;
+  int head_limit;
+  bool head_has_more;
+  int head_total_loaded;
 
-    /* current feed selection */
-    int cur_id;
-    bool cur_is_cat;
-    char *cur_title;
-    const char *view_mode;
-    char *filter;
+  /* current feed selection */
+  int cur_id;
+  bool cur_is_cat;
+  char *cur_title;
+  const char *view_mode;
+  char *filter;
 
-    /* article */
-    Headline *article;
-    ArtLine *art_lines;
-    size_t art_nlines;
-    int art_scroll;
-    int art_rows;
-    int art_cols;
-    int art_wrap_width;
+  /* article */
+  Headline *article;
+  ArtLine *art_lines;
+  size_t art_nlines;
+  int art_scroll;
+  int art_rows;
+  int art_cols;
+  int art_wrap_width;
 
-    /* status */
-    char status[512];
-    bool status_error;
-    Counter counters;
+  /* status */
+  char status[512];
+  bool status_error;
+  Counter counters;
 
-    /* async-ish spinner */
-    bool busy;
+  /* async-ish spinner */
+  bool busy;
 } App;
 
 /* ---- screen.c --------------------------------------------------------- */

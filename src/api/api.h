@@ -11,18 +11,18 @@
 #include "model/model.h"
 
 typedef enum {
-    API_OK = 0,
-    API_ERR_NETWORK,
-    API_ERR_HTTP,
-    API_ERR_PARSE,
-    API_ERR_STATUS,          /* generic server-side error */
-    API_ERR_NOT_LOGGED_IN,
-    API_ERR_LOGIN,
-    API_ERR_API_DISABLED,
-    API_ERR_UNKNOWN_METHOD,
-    API_ERR_INCORRECT_USAGE,
-    API_ERR_OPERATION_FAILED,
-    API_ERR_NOT_FOUND,
+  API_OK = 0,
+  API_ERR_NETWORK,
+  API_ERR_HTTP,
+  API_ERR_PARSE,
+  API_ERR_STATUS, /* generic server-side error */
+  API_ERR_NOT_LOGGED_IN,
+  API_ERR_LOGIN,
+  API_ERR_API_DISABLED,
+  API_ERR_UNKNOWN_METHOD,
+  API_ERR_INCORRECT_USAGE,
+  API_ERR_OPERATION_FAILED,
+  API_ERR_NOT_FOUND,
 } ApiError;
 
 typedef struct ApiClient ApiClient;
@@ -80,8 +80,8 @@ int api_get_config(ApiClient *c, int *num_feeds);
 int api_update_article(ApiClient *c, const int *ids, size_t n, int mode,
                        int field, const char *data);
 int api_catchup_feed(ApiClient *c, int feed_id, bool is_cat, const char *mode);
-int api_set_article_label(ApiClient *c, const int *ids, size_t n,
-                          int label_id, bool assign);
+int api_set_article_label(ApiClient *c, const int *ids, size_t n, int label_id,
+                          bool assign);
 int api_subscribe_feed(ApiClient *c, const char *url, int cat_id,
                        const char *login, const char *password);
 int api_unsubscribe_feed(ApiClient *c, int feed_id);

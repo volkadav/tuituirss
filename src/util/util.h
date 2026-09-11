@@ -2,9 +2,9 @@
 #ifndef TUIIRSS_UTIL_H
 #define TUIIRSS_UTIL_H
 
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include <stdarg.h>
 #include <stdlib.h>
 #include <time.h>
 
@@ -20,9 +20,8 @@
  * ownership is transferred (returned, or stored into another owner).
  */
 #if defined(__GNUC__) || defined(__clang__)
-static inline void autofree_cleanup(void *p)
-{
-    free(*(void **)p);
+static inline void autofree_cleanup(void *p) {
+  free(*(void **)p);
 }
 #define autofree __attribute__((cleanup(autofree_cleanup)))
 #else
@@ -36,8 +35,8 @@ void *xrealloc(void *p, size_t n);
 char *xstrdup(const char *s);
 char *xstrndup(const char *s, size_t n);
 /* printf into a freshly allocated string (caller frees). */
-char *xasprintf(const char *fmt, ...)
-    __attribute__((format(printf, 1, 2))) __attribute__((nonnull(1)));
+char *xasprintf(const char *fmt, ...) __attribute__((format(printf, 1, 2)))
+__attribute__((nonnull(1)));
 
 /* ---- strings ---------------------------------------------------------- */
 /* Remove control characters (including \r and NUL) in place. */
@@ -78,7 +77,8 @@ void sha1_hex(const void *data, size_t len, char out[41]);
 size_t utf8_len(const char *s);
 /* Copy at most max_cells display columns of src into dst (NUL terminated),
  * never splitting a code point. Returns display width written. */
-size_t utf8_copy_cells(char *dst, size_t dstsz, const char *src, size_t max_cells);
+size_t utf8_copy_cells(char *dst, size_t dstsz, const char *src,
+                       size_t max_cells);
 /* Display width of a UTF-8 string (approximate; wide chars count 2). */
 size_t utf8_width(const char *s);
 
@@ -92,10 +92,8 @@ void format_datetime(time_t t, char *buf, size_t bufsz);
 /* ---- logging (implemented in log.c) ---------------------------------- */
 void log_init(const char *path, bool debug);
 void log_close(void);
-void log_debug(const char *fmt, ...)
-    __attribute__((format(printf, 1, 2)));
-void log_error(const char *fmt, ...)
-    __attribute__((format(printf, 1, 2)));
+void log_debug(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
+void log_error(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 /* Return a copy of a JSON string with sensitive values redacted. */
 char *log_redact_json(const char *json);
 

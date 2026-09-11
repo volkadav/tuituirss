@@ -49,72 +49,72 @@
 /* ---- data types ------------------------------------------------------- */
 
 typedef struct {
-    int id;
-    char *title;
-    int unread;
-    int order_id;
+  int id;
+  char *title;
+  int unread;
+  int order_id;
 } Category;
 
 typedef struct {
-    int id;
-    char *title;
-    char *feed_url;
-    int cat_id;
-    int unread;
-    bool has_icon;
-    bool is_cat;
-    char *last_error;
-    time_t last_updated;
+  int id;
+  char *title;
+  char *feed_url;
+  int cat_id;
+  int unread;
+  bool has_icon;
+  bool is_cat;
+  char *last_error;
+  time_t last_updated;
 } Feed;
 
 typedef struct {
-    int id;       /* label feed-id (negative, see LABEL_BASE_INDEX) */
-    char *caption;
-    char *fg_color;
-    char *bg_color;
-    bool checked;
+  int id; /* label feed-id (negative, see LABEL_BASE_INDEX) */
+  char *caption;
+  char *fg_color;
+  char *bg_color;
+  bool checked;
 } Label;
 
 typedef struct {
-    char *url;
-    char *content_type;
+  char *url;
+  char *content_type;
 } Attachment;
 
 typedef struct {
-    int id;
-    char *guid;
-    char *title;
-    char *link;
-    char *author;
-    char *feed_title;
-    char *site_url;
-    int feed_id;
-    bool unread;
-    bool marked;
-    bool published;
-    bool is_updated;
-    int score;
-    time_t updated;
-    char *note;
-    char *excerpt;
-    char *content;
-    char *lang;
-    int comments_count;
-    char *comments_link;
-    Attachment *attachments;
-    size_t nattachments;
-    Label *labels;
-    size_t nlabels;
+  int id;
+  char *guid;
+  char *title;
+  char *link;
+  char *author;
+  char *feed_title;
+  char *site_url;
+  int feed_id;
+  bool unread;
+  bool marked;
+  bool published;
+  bool is_updated;
+  int score;
+  time_t updated;
+  char *note;
+  char *excerpt;
+  char *content;
+  char *lang;
+  int comments_count;
+  char *comments_link;
+  Attachment *attachments;
+  size_t nattachments;
+  Label *labels;
+  size_t nlabels;
 } Headline;
 
 typedef struct {
-    int total;
-    int unread;
-    int marked;
-    int published;
-    int feeds;
-    int labels;
-    int fresh;
+  int total;
+  int unread;
+  int marked;
+  int published;
+  int feeds;
+  int labels;
+  int fresh;
 } Counter;
 
 /* ---- ownership / lifecycle ------------------------------------------- */
@@ -137,11 +137,11 @@ Counter parse_counters(json_t *obj);
 /* ---- classification helpers ------------------------------------------ */
 
 typedef enum {
-    ITEM_FEED = 0,     /* regular feed (id > 0) */
-    ITEM_CATEGORY,     /* category (id >= 0 but used as is_cat) */
-    ITEM_LABEL,        /* label feed-id (LABEL_BASE_INDEX < id < 0) */
-    ITEM_VIRTUAL,      /* special virtual feed (id <= 0, known) */
-    ITEM_PLUGIN        /* plugin feed (PLUGIN_FEED_BASE_INDEX .. ) */
+  ITEM_FEED = 0, /* regular feed (id > 0) */
+  ITEM_CATEGORY, /* category (id >= 0 but used as is_cat) */
+  ITEM_LABEL,    /* label feed-id (LABEL_BASE_INDEX < id < 0) */
+  ITEM_VIRTUAL,  /* special virtual feed (id <= 0, known) */
+  ITEM_PLUGIN    /* plugin feed (PLUGIN_FEED_BASE_INDEX .. ) */
 } ItemKind;
 
 ItemKind model_classify_feed_id(int id);

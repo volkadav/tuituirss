@@ -8,16 +8,16 @@
 /* Runtime configuration, loaded from JSON and optionally overridden on the
  * command line. All strings are owned by the struct. */
 typedef struct {
-    char *server_url;  /* full API endpoint URL */
-    char *username;
-    char *data_dir;    /* expanded absolute-ish path */
-    char *ca_file;     /* optional CA bundle */
-    bool insecure;     /* skip TLS verification (self-signed certs) */
-    int timeout_sec;   /* network timeout, seconds */
-    bool debug;        /* enable debug logging */
-    char *log_file;    /* optional log path; NULL disables logging */
+  char *server_url; /* full API endpoint URL */
+  char *username;
+  char *data_dir;  /* expanded absolute-ish path */
+  char *ca_file;   /* optional CA bundle */
+  bool insecure;   /* skip TLS verification (self-signed certs) */
+  int timeout_sec; /* network timeout, seconds */
+  bool debug;      /* enable debug logging */
+  char *log_file;  /* optional log path; NULL disables logging */
 
-    char error[256];   /* last error message */
+  char error[256]; /* last error message */
 } Config;
 
 /* Allocate a Config with defaults filled in. */

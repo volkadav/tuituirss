@@ -8,14 +8,14 @@
 extern int g_checks;
 extern int g_fails;
 
-#define CHECK(cond)                                                           \
-    do {                                                                      \
-        g_checks++;                                                           \
-        if (!(cond)) {                                                        \
-            g_fails++;                                                        \
-            fprintf(stderr, "FAIL %s:%d: %s\n", __FILE__, __LINE__, #cond);   \
-        }                                                                     \
-    } while (0)
+#define CHECK(cond)                                                            \
+  do {                                                                         \
+    g_checks++;                                                                \
+    if (!(cond)) {                                                             \
+      g_fails++;                                                               \
+      fprintf(stderr, "FAIL %s:%d: %s\n", __FILE__, __LINE__, #cond);          \
+    }                                                                          \
+  } while (0)
 
 void check_str_impl(const char *a, const char *b, const char *file, int line);
 
