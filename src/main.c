@@ -13,7 +13,7 @@
 #include "ui/ui.h"
 #include "util/util.h"
 
-#define TUIIRSS_VERSION "0.0.1"
+#define TUIIRSS_VERSION "0.0.2"
 
 static void usage(FILE *out) {
   fprintf(out,
