@@ -11,7 +11,7 @@
 #include "config/config.h"
 #include "model/model.h"
 
-/* ---- colour pairs ----------------------------------------------------- */
+/* ---- color pairs ----------------------------------------------------- */
 enum {
   CP_DEFAULT = 1,
   CP_SELECTED,
@@ -24,7 +24,13 @@ enum {
   CP_SECTION,
   CP_STARRED,
   CP_NOTE,
+  CP_FOCUS,
+  CP_COUNT,
 };
+
+/* De-emphasised text (already-read items, hints); dimmed so it stays legible
+ * on both light and dark terminal backgrounds. */
+#define ATTR_READ (COLOR_PAIR(CP_READ) | A_DIM)
 
 /* ---- panes ------------------------------------------------------------ */
 typedef enum { PANE_FEEDS = 0, PANE_HEADLINES, PANE_ARTICLE } Pane;
@@ -60,6 +66,9 @@ typedef enum {
   ACT_REFRESH,
   ACT_HELP,
   ACT_LOAD_MORE,
+  ACT_LINK_NEXT,
+  ACT_LINK_PREV,
+  ACT_OPEN_LINK,
 } Action;
 
 #define CTX_GLOBAL 0x01u
@@ -97,6 +106,13 @@ typedef struct {
   char *text;
   int attr;
 } ArtLine;
+
+/* ---- selectable link in the article's link list ---------------------- */
+typedef struct {
+  char *url;
+  size_t line;   /* first art_lines index occupied by this link */
+  size_t nlines; /* number of art_lines it spans */
+} ArtLink;
 
 /* ---- application state ------------------------------------------------ */
 typedef struct {
@@ -147,6 +163,9 @@ typedef struct {
   int art_rows;
   int art_cols;
   int art_wrap_width;
+  ArtLink *art_links;
+  size_t art_nlinks;
+  int art_link_sel;
 
   /* status */
   char status[512];
@@ -194,6 +213,8 @@ void article_clear(App *app);
 void article_draw(App *app);
 void article_scroll(App *app, int delta);
 void article_rebuild(App *app);
+void article_link_move(App *app, int delta);
+void article_open_link(App *app);
 
 /* ---- status.c --------------------------------------------------------- */
 void status_draw(App *app);
@@ -206,7 +227,11 @@ int dialog_label_picker(App *app, const int *ids, size_t n);
 void dialog_help(App *app);
 
 /* ---- render.c --------------------------------------------------------- */
-void render_init(void);
+/* Initialize colors using the named theme ("dark" or "light"). An unknown
+ * name falls back to the default theme. Returns the theme actually applied. */
+const char *render_init(const char *theme);
+bool render_theme_valid(const char *theme);
+void render_box(WINDOW *w, bool focused);
 void render_text(WINDOW *w, int y, int x, int maxw, const char *s, int attr);
 void render_text_justify(WINDOW *w, int y, int x, int maxw, const char *s,
                          int attr, bool right);

@@ -12,6 +12,7 @@
 #include <strings.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #include <wchar.h>
 
@@ -25,11 +26,13 @@ static void oom(void) {
 }
 
 void *xmalloc(size_t n) {
-  if (n == 0)
+  if (n == 0) {
     n = 1;
+  }
   void *p = malloc(n);
-  if (!p)
+  if (!p) {
     oom();
+  }
   return p;
 }
 
@@ -39,23 +42,27 @@ void *xcalloc(size_t n, size_t sz) {
     sz = 1;
   }
   void *p = calloc(n, sz);
-  if (!p)
+  if (!p) {
     oom();
+  }
   return p;
 }
 
 void *xrealloc(void *p, size_t n) {
-  if (n == 0)
+  if (n == 0) {
     n = 1;
+  }
   void *q = realloc(p, n);
-  if (!q)
+  if (!q) {
     oom();
+  }
   return q;
 }
 
 char *xstrdup(const char *s) {
-  if (!s)
+  if (!s) {
     return NULL;
+  }
   size_t n = strlen(s) + 1;
   char *p = xmalloc(n);
   memcpy(p, s, n);
@@ -63,8 +70,9 @@ char *xstrdup(const char *s) {
 }
 
 char *xstrndup(const char *s, size_t n) {
-  if (!s)
+  if (!s) {
     return NULL;
+  }
   size_t len = strnlen(s, n);
   char *p = xmalloc(len + 1);
   memcpy(p, s, len);
@@ -102,24 +110,33 @@ static size_t utf8_decode(const unsigned char *s, size_t remaining,
  * Blocking these prevents escape injection and visual spoofing via untrusted
  * feed content. */
 static bool is_forbidden_cp(uint32_t cp) {
-  if (cp < 0x20 || cp == 0x7f)
-    return true; /* C0 controls and DEL */
-  if (cp >= 0x80 && cp <= 0x9f)
-    return true; /* C1 controls (some terminals treat as escapes) */
-  if (cp == 0x061c)
-    return true; /* Arabic letter mark */
-  if (cp == 0x200b || cp == 0x200c || cp == 0x200d)
-    return true; /* zero-width space / joiners */
-  if (cp == 0x200e || cp == 0x200f)
-    return true; /* LRM / RLM */
-  if (cp >= 0x202a && cp <= 0x202e)
-    return true; /* bidi embedding / override */
-  if (cp >= 0x2060 && cp <= 0x2064)
-    return true; /* invisible operators */
-  if (cp >= 0x2066 && cp <= 0x2069)
-    return true; /* bidi isolates */
-  if (cp == 0xfeff)
-    return true; /* BOM / zero-width no-break space */
+  if (cp < 0x20 || cp == 0x7f) {
+    return true;
+  } /* C0 controls and DEL */
+  if (cp >= 0x80 && cp <= 0x9f) {
+    return true;
+  } /* C1 controls (some terminals treat as escapes) */
+  if (cp == 0x061c) {
+    return true;
+  } /* Arabic letter mark */
+  if (cp == 0x200b || cp == 0x200c || cp == 0x200d) {
+    return true;
+  } /* zero-width space / joiners */
+  if (cp == 0x200e || cp == 0x200f) {
+    return true;
+  } /* LRM / RLM */
+  if (cp >= 0x202a && cp <= 0x202e) {
+    return true;
+  } /* bidi embedding / override */
+  if (cp >= 0x2060 && cp <= 0x2064) {
+    return true;
+  } /* invisible operators */
+  if (cp >= 0x2066 && cp <= 0x2069) {
+    return true;
+  } /* bidi isolates */
+  if (cp == 0xfeff) {
+    return true;
+  } /* BOM / zero-width no-break space */
   return false;
 }
 
@@ -127,8 +144,9 @@ static bool is_forbidden_cp(uint32_t cp) {
  * (article bodies) '\n' is preserved; otherwise newlines become spaces so a
  * single-line field stays single-line. Invalid UTF-8 is dropped. */
 static void sanitize_inplace(char *s, bool keep_newlines) {
-  if (!s)
+  if (!s) {
     return;
+  }
   unsigned char *r = (unsigned char *)s;
   unsigned char *w = r;
   size_t remaining = strlen(s);
@@ -139,8 +157,9 @@ static void sanitize_inplace(char *s, bool keep_newlines) {
       if (c == '\n') {
         *w++ = keep_newlines ? '\n' : ' ';
       } else if (c == '\r') {
-        if (!keep_newlines)
+        if (!keep_newlines) {
           *w++ = ' ';
+        }
       } else if (c == '\t' || (c >= 0x20 && c != 0x7f)) {
         *w++ = c;
       }
@@ -170,35 +189,43 @@ void str_strip_ctrl(char *s) {
 }
 
 char *str_trim(char *s) {
-  if (!s)
+  if (!s) {
     return s;
+  }
   char *p = s;
-  while (*p && isspace((unsigned char)*p))
+  while (*p && isspace((unsigned char)*p)) {
     p++;
-  if (p != s)
+  }
+  if (p != s) {
     memmove(s, p, strlen(p) + 1);
+  }
   size_t len = strlen(s);
-  while (len > 0 && isspace((unsigned char)s[len - 1]))
+  while (len > 0 && isspace((unsigned char)s[len - 1])) {
     s[--len] = '\0';
+  }
   return s;
 }
 
 const char *str_icontains(const char *haystack, const char *needle) {
-  if (!haystack || !needle)
+  if (!haystack || !needle) {
     return NULL;
-  if (!*needle)
+  }
+  if (!*needle) {
     return haystack;
+  }
   size_t nlen = strlen(needle);
   for (const char *p = haystack; *p; p++) {
-    if (strncasecmp(p, needle, nlen) == 0)
+    if (strncasecmp(p, needle, nlen) == 0) {
       return p;
+    }
   }
   return NULL;
 }
 
 char *str_sanitize_copy(const char *s) {
-  if (!s)
+  if (!s) {
     return NULL;
+  }
   char *copy = xstrdup(s);
   str_strip_ctrl(copy);
   return copy;
@@ -225,8 +252,9 @@ static void sb_put_cp(strbuf *sb, uint32_t cp) {
   /* Never emit NUL, surrogates, out-of-range values, or control/invisible
    * code points (e.g. from &#0; or &#x1b;): substitute U+FFFD. */
   if (cp == 0 || cp > 0x10FFFF || (cp >= 0xD800 && cp <= 0xDFFF) ||
-      is_forbidden_cp(cp))
+      is_forbidden_cp(cp)) {
     cp = 0xFFFD;
+  }
 
   if (cp < 0x80) {
     sb_put(sb, (char)cp);
@@ -263,8 +291,9 @@ static const struct {
 static uint32_t entity_lookup(const char *name, size_t len) {
   for (int i = 0; g_entities[i].name; i++) {
     if (strlen(g_entities[i].name) == len &&
-        strncmp(g_entities[i].name, name, len) == 0)
+        strncmp(g_entities[i].name, name, len) == 0) {
       return g_entities[i].cp;
+    }
   }
   return 0xFFFD;
 }
@@ -274,27 +303,30 @@ static uint32_t entity_lookup(const char *name, size_t len) {
 static uint32_t decode_entity(const char *p, size_t *consumed) {
   *consumed = 1; /* just '&' */
   const char *semi = strchr(p, ';');
-  if (!semi || (size_t)(semi - p) > 12)
+  if (!semi || (size_t)(semi - p) > 12) {
     return '&';
+  }
   if (p[0] == '#') {
     uint32_t cp = 0;
     if (p[1] == 'x' || p[1] == 'X') {
       for (const char *q = p + 2; q < semi; q++) {
         int d;
-        if (*q >= '0' && *q <= '9')
+        if (*q >= '0' && *q <= '9') {
           d = *q - '0';
-        else if (*q >= 'a' && *q <= 'f')
+        } else if (*q >= 'a' && *q <= 'f') {
           d = *q - 'a' + 10;
-        else if (*q >= 'A' && *q <= 'F')
+        } else if (*q >= 'A' && *q <= 'F') {
           d = *q - 'A' + 10;
-        else
+        } else {
           return '&';
+        }
         cp = cp * 16 + (uint32_t)d;
       }
     } else {
       for (const char *q = p + 1; q < semi; q++) {
-        if (*q < '0' || *q > '9')
+        if (*q < '0' || *q > '9') {
           return '&';
+        }
         cp = cp * 10 + (uint32_t)(*q - '0');
       }
     }
@@ -307,8 +339,9 @@ static uint32_t decode_entity(const char *p, size_t *consumed) {
 }
 
 char *html_entity_decode(const char *s) {
-  if (!s)
+  if (!s) {
     return NULL;
+  }
   strbuf sb = {0};
   for (const char *p = s; *p; p++) {
     if (*p == '&') {
@@ -322,8 +355,9 @@ char *html_entity_decode(const char *s) {
     }
     sb_put(&sb, *p);
   }
-  if (!sb.buf)
+  if (!sb.buf) {
     return xstrdup("");
+  }
   sanitize_inplace(sb.buf, false);
   return sb.buf;
 }
@@ -335,15 +369,17 @@ static bool tag_is_break(const char *name, size_t len) {
       "h6",      "hr",     "blockquote", "pre",    "table", "section",
       "article", "header", "footer",     "figure", NULL};
   for (int i = 0; brk[i]; i++) {
-    if (strlen(brk[i]) == len && strncasecmp(brk[i], name, len) == 0)
+    if (strlen(brk[i]) == len && strncasecmp(brk[i], name, len) == 0) {
       return true;
+    }
   }
   return false;
 }
 
 char *html_to_text(const char *html) {
-  if (!html)
+  if (!html) {
     return xstrdup("");
+  }
   strbuf sb = {0};
   const char *p = html;
   while (*p) {
@@ -367,8 +403,9 @@ char *html_to_text(const char *html) {
       }
       const char *nend = name;
       while ((*nend >= 'a' && *nend <= 'z') || (*nend >= 'A' && *nend <= 'Z') ||
-             (*nend >= '0' && *nend <= '9'))
+             (*nend >= '0' && *nend <= '9')) {
         nend++;
+      }
       size_t nlen = (size_t)(nend - name);
 
       if (!closing && nlen == 6 && strncasecmp(name, "script", 6) == 0) {
@@ -381,8 +418,9 @@ char *html_to_text(const char *html) {
         p = close ? close : end + 1;
         continue;
       }
-      if (tag_is_break(name, nlen))
+      if (tag_is_break(name, nlen)) {
         sb_put(&sb, '\n');
+      }
       p = end + 1;
       continue;
     }
@@ -397,42 +435,184 @@ char *html_to_text(const char *html) {
     }
     sb_put(&sb, *p++);
   }
-  if (!sb.buf)
+  if (!sb.buf) {
     return xstrdup("");
+  }
 
-  /* Final defence: drop any control/invisible code points or invalid UTF-8
+  /* Final defense: drop any control/invisible code points or invalid UTF-8
    * that reached us as raw bytes, keeping intentional newlines. */
   sanitize_inplace(sb.buf, true);
 
-  /* Normalise whitespace: trim trailing spaces per line, collapse runs of
+  /* Normalize whitespace: trim trailing spaces per line, collapse runs of
    * blank lines, and drop leading/trailing blank lines. */
   char *out = xmalloc(sb.len + 1);
   size_t o = 0;
   int newlines = 0;
   for (char *q = sb.buf; *q;) {
     if (*q == '\n') {
-      while (o > 0 && (out[o - 1] == ' ' || out[o - 1] == '\t'))
+      while (o > 0 && (out[o - 1] == ' ' || out[o - 1] == '\t')) {
         o--;
-      if (newlines < 2)
+      }
+      if (newlines < 2) {
         out[o++] = '\n';
+      }
       newlines++;
       q++;
       continue;
     }
     if (*q == ' ' || *q == '\t') {
-      if (o > 0 && out[o - 1] != ' ' && out[o - 1] != '\n')
+      if (o > 0 && out[o - 1] != ' ' && out[o - 1] != '\n') {
         out[o++] = ' ';
+      }
       q++;
       continue;
     }
     out[o++] = *q++;
     newlines = 0;
   }
-  while (o > 0 && (out[o - 1] == '\n' || out[o - 1] == ' '))
+  while (o > 0 && (out[o - 1] == '\n' || out[o - 1] == ' ')) {
     o--;
+  }
   out[o] = '\0';
   free(sb.buf);
   return out;
+}
+
+/* ----------------------------------------------------------------------- */
+/* urls                                                                    */
+/* ----------------------------------------------------------------------- */
+
+static bool url_starts_at(const char *p) {
+  return strncmp(p, "http://", 7) == 0 || strncmp(p, "https://", 8) == 0;
+}
+
+static bool url_delim(unsigned char c) {
+  return c == '\0' || isspace(c) || c == '<' || c == '>' || c == '"' ||
+         c == '\'';
+}
+
+char **url_extract(const char *text, size_t *count) {
+  *count = 0;
+  if (!text) {
+    return NULL;
+  }
+  size_t cap = 0;
+  char **out = NULL;
+  const char *p = text;
+  while (*p) {
+    if (!url_starts_at(p)) {
+      p++;
+      continue;
+    }
+    const char *e = p;
+    while (!url_delim((unsigned char)*e)) {
+      e++;
+    }
+    /* Trim trailing sentence punctuation and an unmatched closing paren. */
+    while (e > p) {
+      unsigned char c = (unsigned char)e[-1];
+      if (c == '.' || c == ',' || c == ';' || c == ':' || c == '!' ||
+          c == '?' || c == ']' || c == '}' || c == '\'') {
+        e--;
+        continue;
+      }
+      if (c == ')') {
+        int depth = 0;
+        for (const char *q = p; q < e; q++) {
+          if (*q == '(') {
+            depth++;
+          } else if (*q == ')') {
+            depth--;
+          }
+        }
+        if (depth < 0) {
+          e--;
+          continue;
+        }
+      }
+      break;
+    }
+    if (e > p) {
+      if (*count == cap) {
+        cap = cap ? cap * 2 : 8;
+        out = xrealloc(out, cap * sizeof *out);
+      }
+      out[*count] = xstrndup(p, (size_t)(e - p));
+      (*count)++;
+    }
+    p = e > p ? e : p + 1;
+  }
+  return out;
+}
+
+void url_free(char **urls, size_t n) {
+  if (!urls) {
+    return;
+  }
+  for (size_t i = 0; i < n; i++) {
+    free(urls[i]);
+  }
+  free(urls);
+}
+
+int url_open(const char *browser, const char *url) {
+  if (!url || !*url) {
+    return -1;
+  }
+
+  const char *cmd = (browser && *browser) ? browser : NULL;
+  if (!cmd) {
+#ifdef __APPLE__
+    cmd = "open";
+#else
+    cmd = "xdg-open";
+#endif
+  }
+
+  /* Split the command on whitespace; no shell is involved so the URL cannot
+   * be interpreted as shell syntax. */
+  autofree char *copy = xstrdup(cmd);
+  size_t argc = 0, cap = 8;
+  char **argv = xmalloc(cap * sizeof *argv);
+  char *save = NULL;
+  for (char *tok = strtok_r(copy, " \t", &save); tok;
+       tok = strtok_r(NULL, " \t", &save)) {
+    if (argc + 2 >= cap) {
+      cap *= 2;
+      argv = xrealloc(argv, cap * sizeof *argv);
+    }
+    argv[argc++] = tok;
+  }
+  if (argc == 0) {
+    free(argv);
+    return -1;
+  }
+  argv[argc++] = (char *)url;
+  argv[argc] = NULL;
+
+  /* Run the browser attached to the current terminal and wait for it. This
+   * lets terminal browsers (links, lynx, w3m, ...) draw; GUI launchers such
+   * as xdg-open/open return promptly. */
+  pid_t pid = fork();
+  if (pid < 0) {
+    free(argv);
+    return -1;
+  }
+  if (pid == 0) {
+    execvp(argv[0], argv);
+    _exit(127);
+  }
+
+  int status;
+  if (waitpid(pid, &status, 0) < 0) {
+    free(argv);
+    return -1;
+  }
+  free(argv);
+  if (WIFEXITED(status) && WEXITSTATUS(status) == 127) {
+    return -1;
+  } /* execvp failed */
+  return 0;
 }
 
 /* ----------------------------------------------------------------------- */
@@ -440,13 +620,15 @@ char *html_to_text(const char *html) {
 /* ----------------------------------------------------------------------- */
 
 char *path_expand(const char *path) {
-  if (!path)
+  if (!path) {
     return NULL;
+  }
   if (path[0] == '~' && (path[1] == '/' || path[1] == '\0')) {
     const char *home = getenv("HOME");
     if (home && *home) {
-      if (path[1] == '\0')
+      if (path[1] == '\0') {
         return xstrdup(home);
+      }
       return xasprintf("%s/%s", home, path + 2);
     }
   }
@@ -454,33 +636,40 @@ char *path_expand(const char *path) {
 }
 
 char *path_join(const char *a, const char *b) {
-  if (!a || !*a)
+  if (!a || !*a) {
     return xstrdup(b ? b : "");
-  if (!b || !*b)
+  }
+  if (!b || !*b) {
     return xstrdup(a);
+  }
   size_t alen = strlen(a);
   bool slash = a[alen - 1] == '/';
   return xasprintf("%s%s%s", a, slash ? "" : "/", b);
 }
 
 char *path_dirname(const char *path) {
-  if (!path)
+  if (!path) {
     return xstrdup(".");
+  }
   const char *slash = strrchr(path, '/');
-  if (!slash)
+  if (!slash) {
     return xstrdup(".");
-  if (slash == path)
+  }
+  if (slash == path) {
     return xstrdup("/");
+  }
   return xstrndup(path, (size_t)(slash - path));
 }
 
 int mkdir_p(const char *path, unsigned mode) {
-  if (!path || !*path)
+  if (!path || !*path) {
     return -1;
+  }
   char *tmp = xstrdup(path);
   size_t len = strlen(tmp);
-  while (len > 1 && tmp[len - 1] == '/')
+  while (len > 1 && tmp[len - 1] == '/') {
     tmp[--len] = '\0';
+  }
 
   for (char *p = tmp + 1; *p; p++) {
     if (*p == '/') {
@@ -493,28 +682,35 @@ int mkdir_p(const char *path, unsigned mode) {
     }
   }
   int rc = 0;
-  if (mkdir(tmp, (mode_t)mode) != 0 && errno != EEXIST)
+  if (mkdir(tmp, (mode_t)mode) != 0 && errno != EEXIST) {
     rc = -1;
+  }
   free(tmp);
   return rc;
 }
 
 int ensure_private_dir(const char *path) {
-  if (!path || !*path)
+  if (!path || !*path) {
     return -1;
-  if (mkdir_p(path, 0700) != 0)
+  }
+  if (mkdir_p(path, 0700) != 0) {
     return -1;
+  }
 
   struct stat st;
-  if (lstat(path, &st) != 0) /* lstat: do not follow a symlink */
+  if (lstat(path, &st) != 0) { /* lstat: do not follow a symlink */
     return -1;
-  if (!S_ISDIR(st.st_mode))
+  }
+  if (!S_ISDIR(st.st_mode)) {
     return -1;
-  if (st.st_uid != geteuid())
+  }
+  if (st.st_uid != geteuid()) {
     return -1;
+  }
   if ((st.st_mode & (S_IRWXG | S_IRWXO)) != 0) {
-    if (chmod(path, 0700) != 0)
+    if (chmod(path, 0700) != 0) {
       return -1;
+    }
   }
   return 0;
 }
@@ -583,16 +779,18 @@ static size_t utf8_decode(const unsigned char *s, size_t remaining,
 }
 
 size_t utf8_len(const char *s) {
-  if (!s)
+  if (!s) {
     return 0;
+  }
   size_t count = 0;
   const unsigned char *p = (const unsigned char *)s;
   size_t remaining = strlen(s);
   while (remaining > 0) {
     uint32_t cp;
     size_t n = utf8_decode(p, remaining, &cp);
-    if (n == 0)
+    if (n == 0) {
       break;
+    }
     p += n;
     remaining -= n;
     count++;
@@ -601,16 +799,18 @@ size_t utf8_len(const char *s) {
 }
 
 size_t utf8_width(const char *s) {
-  if (!s)
+  if (!s) {
     return 0;
+  }
   size_t width = 0;
   const unsigned char *p = (const unsigned char *)s;
   size_t remaining = strlen(s);
   while (remaining > 0) {
     uint32_t cp;
     size_t n = utf8_decode(p, remaining, &cp);
-    if (n == 0)
+    if (n == 0) {
       break;
+    }
     int w = wcwidth((wchar_t)cp);
     width += (w > 0) ? (size_t)w : (w == 0 ? 0u : 1u);
     p += n;
@@ -621,11 +821,13 @@ size_t utf8_width(const char *s) {
 
 size_t utf8_copy_cells(char *dst, size_t dstsz, const char *src,
                        size_t max_cells) {
-  if (!dst || dstsz == 0)
+  if (!dst || dstsz == 0) {
     return 0;
+  }
   dst[0] = '\0';
-  if (!src)
+  if (!src) {
     return 0;
+  }
   size_t used = 0; /* bytes in dst */
   size_t cells = 0;
   const unsigned char *p = (const unsigned char *)src;
@@ -633,15 +835,19 @@ size_t utf8_copy_cells(char *dst, size_t dstsz, const char *src,
   while (remaining > 0) {
     uint32_t cp;
     size_t n = utf8_decode(p, remaining, &cp);
-    if (n == 0 || n > remaining)
+    if (n == 0 || n > remaining) {
       break;
+    }
     int w = wcwidth((wchar_t)cp);
-    if (w < 0)
-      w = 1; /* unknown/undecodable: assume single cell */
-    if (cells + (size_t)w > max_cells)
+    if (w < 0) {
+      w = 1;
+    } /* unknown/undecodable: assume single cell */
+    if (cells + (size_t)w > max_cells) {
       break;
-    if (used + n + 1 > dstsz)
+    }
+    if (used + n + 1 > dstsz) {
       break;
+    }
     memcpy(dst + used, p, n);
     used += n;
     cells += (size_t)w;
@@ -657,17 +863,20 @@ size_t utf8_copy_cells(char *dst, size_t dstsz, const char *src,
 /* ----------------------------------------------------------------------- */
 
 void format_age(time_t t, char *buf, size_t bufsz) {
-  if (!buf || bufsz == 0)
+  if (!buf || bufsz == 0) {
     return;
+  }
   if (t <= 0) {
-    if (bufsz)
+    if (bufsz) {
       buf[0] = '\0';
+    }
     return;
   }
   time_t now = time(NULL);
   long diff = (long)(now - t);
-  if (diff < 0)
+  if (diff < 0) {
     diff = 0;
+  }
   if (diff < 60) {
     snprintf(buf, bufsz, "now");
   } else if (diff < 3600) {
@@ -680,20 +889,23 @@ void format_age(time_t t, char *buf, size_t bufsz) {
     struct tm tm;
     localtime_r(&t, &tm);
     char tmp[32];
-    if (tm.tm_year == localtime(&now)->tm_year)
+    if (tm.tm_year == localtime(&now)->tm_year) {
       strftime(tmp, sizeof tmp, "%b %d", &tm);
-    else
+    } else {
       strftime(tmp, sizeof tmp, "%b %d %Y", &tm);
+    }
     snprintf(buf, bufsz, "%s", tmp);
   }
 }
 
 void format_datetime(time_t t, char *buf, size_t bufsz) {
-  if (!buf || bufsz == 0)
+  if (!buf || bufsz == 0) {
     return;
+  }
   if (t <= 0) {
-    if (bufsz)
+    if (bufsz) {
       buf[0] = '\0';
+    }
     return;
   }
   struct tm tm;

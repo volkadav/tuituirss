@@ -22,6 +22,14 @@ static const Binding g_bindings[] = {
     {KEY_HOME, CTX_LIST, ACT_FIRST, NULL},
     {'G', CTX_LIST, ACT_LAST, "jump to last item / load more"},
     {KEY_END, CTX_LIST, ACT_LAST, NULL},
+    {KEY_UP, CTX_ARTICLE, ACT_LINK_NEXT, "select next link"},
+    {KEY_RIGHT, CTX_ARTICLE, ACT_LINK_NEXT, NULL},
+    {KEY_DOWN, CTX_ARTICLE, ACT_LINK_PREV, "select previous link"},
+    {KEY_LEFT, CTX_ARTICLE, ACT_LINK_PREV, NULL},
+    {'\n', CTX_ARTICLE, ACT_OPEN_LINK, "open selected link in browser"},
+    {KEY_ENTER, CTX_ARTICLE, ACT_OPEN_LINK, NULL},
+    {'j', CTX_ARTICLE, ACT_DOWN, "scroll article down"},
+    {'k', CTX_ARTICLE, ACT_UP, "scroll article up"},
     {'l', CTX_GLOBAL, ACT_FOCUS_NEXT, "focus next pane"},
     {'\t', CTX_GLOBAL, ACT_FOCUS_NEXT, NULL},
     {KEY_RIGHT, CTX_GLOBAL, ACT_FOCUS_NEXT, NULL},
@@ -80,8 +88,9 @@ unsigned input_context(App *app) {
 Action input_action(int ch, unsigned ctx) {
   unsigned all = ctx | CTX_GLOBAL;
   for (size_t i = 0; i < sizeof g_bindings / sizeof g_bindings[0]; i++) {
-    if (g_bindings[i].key == ch && (g_bindings[i].ctx & all))
+    if (g_bindings[i].key == ch && (g_bindings[i].ctx & all)) {
       return g_bindings[i].act;
+    }
   }
   return ACT_NONE;
 }
@@ -93,38 +102,41 @@ char *input_help_text(void) {
   buf[0] = '\0';
 
   for (size_t i = 0; i < sizeof g_bindings / sizeof g_bindings[0]; i++) {
-    if (!g_bindings[i].desc)
+    if (!g_bindings[i].desc) {
       continue;
+    }
     char key[16];
     int k = g_bindings[i].key;
-    if (k == ' ')
+    if (k == ' ') {
       snprintf(key, sizeof key, "Space");
-    else if (k >= 32 && k < 127)
+    } else if (k >= 32 && k < 127) {
       snprintf(key, sizeof key, "%c", k);
-    else if (k == '\n')
+    } else if (k == '\n') {
       snprintf(key, sizeof key, "Enter");
-    else if (k == '\t')
+    } else if (k == '\t') {
       snprintf(key, sizeof key, "Tab");
-    else if (k == KEY_DOWN)
+    } else if (k == KEY_DOWN) {
       snprintf(key, sizeof key, "Down");
-    else if (k == KEY_UP)
+    } else if (k == KEY_UP) {
       snprintf(key, sizeof key, "Up");
-    else if (k == KEY_LEFT)
+    } else if (k == KEY_LEFT) {
       snprintf(key, sizeof key, "Left");
-    else if (k == KEY_RIGHT)
+    } else if (k == KEY_RIGHT) {
       snprintf(key, sizeof key, "Right");
-    else if (k == KEY_HOME)
+    } else if (k == KEY_HOME) {
       snprintf(key, sizeof key, "Home");
-    else if (k == KEY_END)
+    } else if (k == KEY_END) {
       snprintf(key, sizeof key, "End");
-    else if (k == 27)
+    } else if (k == 27) {
       snprintf(key, sizeof key, "Esc");
-    else
+    } else {
       snprintf(key, sizeof key, "0x%x", k);
+    }
     int n =
         snprintf(buf + len, cap - len, "  %-8s %s\n", key, g_bindings[i].desc);
-    if (n < 0)
+    if (n < 0) {
       break;
+    }
     len += (size_t)n;
     if (len + 128 >= cap) {
       cap *= 2;

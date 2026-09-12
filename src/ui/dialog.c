@@ -6,20 +6,26 @@
 #include <string.h>
 
 static WINDOW *centered(App *app, int h, int w, int *out_y, int *out_x) {
-  if (w > app->cols - 4)
+  if (w > app->cols - 4) {
     w = app->cols - 4;
-  if (h > app->rows - 2)
+  }
+  if (h > app->rows - 2) {
     h = app->rows - 2;
-  if (w < 10)
+  }
+  if (w < 10) {
     w = 10;
-  if (h < 3)
+  }
+  if (h < 3) {
     h = 3;
+  }
   int y = (app->rows - h) / 2;
   int x = (app->cols - w) / 2;
-  if (out_y)
+  if (out_y) {
     *out_y = y;
-  if (out_x)
+  }
+  if (out_x) {
     *out_x = x;
+  }
   WINDOW *win = newwin(h, w, y, x);
   keypad(win, TRUE);
   return win;
@@ -65,12 +71,14 @@ char *dialog_input(App *app, const char *title, const char *initial) {
       }
       break;
     case KEY_LEFT:
-      if (pos > 0)
+      if (pos > 0) {
         pos--;
+      }
       break;
     case KEY_RIGHT:
-      if (buf[pos])
+      if (buf[pos]) {
         pos++;
+      }
       break;
     case KEY_HOME:
       pos = 0;
@@ -102,7 +110,7 @@ int dialog_confirm(App *app, const char *title, const char *question) {
   box(win, 0, 0);
   render_text(win, 0, 2, ww - 3, title, COLOR_PAIR(CP_TITLE) | A_BOLD);
   render_text(win, 2, 2, ww - 4, question, COLOR_PAIR(CP_DEFAULT));
-  render_text(win, 3, 2, ww - 4, "[y/N]", COLOR_PAIR(CP_READ));
+  render_text(win, 3, 2, ww - 4, "[y/N]", ATTR_READ);
   wrefresh(win);
 
   int ch = wgetch(win);
@@ -121,8 +129,7 @@ void dialog_message(App *app, const char *title, const char *msg) {
   box(win, 0, 0);
   render_text(win, 0, 2, ww - 3, title, COLOR_PAIR(CP_TITLE) | A_BOLD);
   render_text(win, 2, 2, ww - 4, msg, COLOR_PAIR(CP_DEFAULT));
-  render_text(win, h - 2, 2, ww - 4, "Press any key to close",
-              COLOR_PAIR(CP_READ));
+  render_text(win, h - 2, 2, ww - 4, "Press any key to close", ATTR_READ);
   wrefresh(win);
   wgetch(win);
   delwin(win);
@@ -143,8 +150,9 @@ int dialog_label_picker(App *app, const int *ids, size_t n) {
   }
 
   int h = (int)nl + 4;
-  if (h > app->rows - 2)
+  if (h > app->rows - 2) {
     h = app->rows - 2;
+  }
   WINDOW *win = centered(app, h, 56, NULL, NULL);
   int wh, ww;
   getmaxyx(win, wh, ww);
@@ -159,18 +167,22 @@ int dialog_label_picker(App *app, const int *ids, size_t n) {
     box(win, 0, 0);
     render_text(win, 0, 2, ww - 3, "Labels  (space toggle, enter apply)",
                 COLOR_PAIR(CP_TITLE) | A_BOLD);
-    if (sel < top)
+    if (sel < top) {
       top = sel;
-    if (sel >= top + visible)
+    }
+    if (sel >= top + visible) {
       top = sel - visible + 1;
+    }
     for (int r = 0; r < visible; r++) {
       int idx = top + r;
-      if (idx < 0 || (size_t)idx >= nl)
+      if (idx < 0 || (size_t)idx >= nl) {
         break;
+      }
       int attr = (idx == sel) ? COLOR_PAIR(CP_SELECTED) | A_BOLD
                               : COLOR_PAIR(CP_DEFAULT);
-      if (idx == sel)
+      if (idx == sel) {
         render_fill(win, r + 1, 1, ww - 2, attr);
+      }
       char line[600];
       snprintf(line, sizeof line, "[%c] %s", labels[idx].checked ? 'x' : ' ',
                labels[idx].caption ? labels[idx].caption : "");
@@ -186,13 +198,15 @@ int dialog_label_picker(App *app, const int *ids, size_t n) {
       break;
     case 'j':
     case KEY_DOWN:
-      if ((size_t)(sel + 1) < nl)
+      if ((size_t)(sel + 1) < nl) {
         sel++;
+      }
       break;
     case 'k':
     case KEY_UP:
-      if (sel > 0)
+      if (sel > 0) {
         sel--;
+      }
       break;
     case ' ':
       labels[sel].checked = !labels[sel].checked;
@@ -208,8 +222,9 @@ int dialog_label_picker(App *app, const int *ids, size_t n) {
           break;
         }
       }
-      if (rc == 0)
+      if (rc == 0) {
         ui_status(app, false, "Labels updated");
+      }
       done = true;
       break;
     }
@@ -225,10 +240,12 @@ int dialog_label_picker(App *app, const int *ids, size_t n) {
 void dialog_help(App *app) {
   char *text = input_help_text();
   int h = app->rows - 4;
-  if (h > 30)
+  if (h > 30) {
     h = 30;
-  if (h < 5)
+  }
+  if (h < 5) {
     h = 5;
+  }
   int w = 64;
   WINDOW *win = centered(app, h, w, NULL, NULL);
   int wh, ww;
@@ -257,8 +274,9 @@ void dialog_help(App *app) {
                 COLOR_PAIR(CP_TITLE) | A_BOLD);
     for (int r = 0; r < visible; r++) {
       int idx = top + r;
-      if (idx < 0 || (size_t)idx >= nlines)
+      if (idx < 0 || (size_t)idx >= nlines) {
         break;
+      }
       render_text(win, r + 1, 2, ww - 4, lines[idx], COLOR_PAIR(CP_DEFAULT));
     }
     wrefresh(win);
@@ -267,21 +285,25 @@ void dialog_help(App *app) {
     switch (ch) {
     case 'j':
     case KEY_DOWN:
-      if (top + visible < (int)nlines)
+      if (top + visible < (int)nlines) {
         top++;
+      }
       break;
     case 'k':
     case KEY_UP:
-      if (top > 0)
+      if (top > 0) {
         top--;
+      }
       break;
     case ' ':
     case KEY_NPAGE:
       top += visible;
-      if (top > (int)nlines - visible)
+      if (top > (int)nlines - visible) {
         top = (int)nlines - visible;
-      if (top < 0)
+      }
+      if (top < 0) {
         top = 0;
+      }
       break;
     default:
       done = true;

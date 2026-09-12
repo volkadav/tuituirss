@@ -10,73 +10,92 @@
 /* ----------------------------------------------------------------------- */
 
 static char *js_str(json_t *obj, const char *key) {
-  if (!obj)
+  if (!obj) {
     return NULL;
+  }
   json_t *v = json_object_get(obj, key);
-  if (!v || json_is_null(v))
+  if (!v || json_is_null(v)) {
     return NULL;
+  }
   if (json_is_string(v)) {
     const char *s = json_string_value(v);
     return s ? str_sanitize_copy(s) : NULL;
   }
   /* Some deployments stringify scalars. */
-  if (json_is_integer(v))
+  if (json_is_integer(v)) {
     return xasprintf("%lld", (long long)json_integer_value(v));
-  if (json_is_real(v))
+  }
+  if (json_is_real(v)) {
     return xasprintf("%g", json_real_value(v));
+  }
   return NULL;
 }
 
 static int js_int(json_t *obj, const char *key, int def) {
-  if (!obj)
+  if (!obj) {
     return def;
+  }
   json_t *v = json_object_get(obj, key);
-  if (!v || json_is_null(v))
+  if (!v || json_is_null(v)) {
     return def;
-  if (json_is_integer(v))
+  }
+  if (json_is_integer(v)) {
     return (int)json_integer_value(v);
-  if (json_is_real(v))
+  }
+  if (json_is_real(v)) {
     return (int)json_real_value(v);
-  if (json_is_string(v))
+  }
+  if (json_is_string(v)) {
     return (int)strtol(json_string_value(v), NULL, 10);
+  }
   return def;
 }
 
 /* Like js_str but decodes HTML entities (titles/author/feed names). */
 static char *js_str_decoded(json_t *obj, const char *key) {
   char *raw = js_str(obj, key);
-  if (!raw)
+  if (!raw) {
     return NULL;
+  }
   char *dec = html_entity_decode(raw);
   free(raw);
   return dec;
 }
 
 static time_t js_time(json_t *obj, const char *key) {
-  if (!obj)
+  if (!obj) {
     return 0;
+  }
   json_t *v = json_object_get(obj, key);
-  if (!v || json_is_null(v))
+  if (!v || json_is_null(v)) {
     return 0;
-  if (json_is_integer(v))
+  }
+  if (json_is_integer(v)) {
     return (time_t)json_integer_value(v);
-  if (json_is_real(v))
+  }
+  if (json_is_real(v)) {
     return (time_t)json_real_value(v);
-  if (json_is_string(v))
+  }
+  if (json_is_string(v)) {
     return (time_t)strtoll(json_string_value(v), NULL, 10);
+  }
   return 0;
 }
 
 static bool js_bool(json_t *obj, const char *key, bool def) {
-  if (!obj)
+  if (!obj) {
     return def;
+  }
   json_t *v = json_object_get(obj, key);
-  if (!v || json_is_null(v))
+  if (!v || json_is_null(v)) {
     return def;
-  if (json_is_boolean(v))
+  }
+  if (json_is_boolean(v)) {
     return json_is_true(v);
-  if (json_is_integer(v))
+  }
+  if (json_is_integer(v)) {
     return json_integer_value(v) != 0;
+  }
   if (json_is_string(v)) {
     const char *s = json_string_value(v);
     return s && (s[0] == 't' || s[0] == '1' || s[0] == 'T');
@@ -99,14 +118,17 @@ static bool parse_label_entry(json_t *v, Label *out) {
   if (json_is_array(v)) {
     out->id = (int)json_integer_value(json_array_get(v, 0));
     json_t *cap = json_array_get(v, 1);
-    if (json_is_string(cap))
+    if (json_is_string(cap)) {
       out->caption = str_sanitize_copy(json_string_value(cap));
+    }
     json_t *fg = json_array_get(v, 2);
-    if (json_is_string(fg))
+    if (json_is_string(fg)) {
       out->fg_color = str_sanitize_copy(json_string_value(fg));
+    }
     json_t *bg = json_array_get(v, 3);
-    if (json_is_string(bg))
+    if (json_is_string(bg)) {
       out->bg_color = str_sanitize_copy(json_string_value(bg));
+    }
     return true;
   }
   return false;
@@ -114,16 +136,19 @@ static bool parse_label_entry(json_t *v, Label *out) {
 
 static Label *parse_labels_array(json_t *arr, size_t *count) {
   *count = 0;
-  if (!arr || !json_is_array(arr))
+  if (!arr || !json_is_array(arr)) {
     return NULL;
+  }
   size_t n = json_array_size(arr);
-  if (n == 0)
+  if (n == 0) {
     return NULL;
+  }
   Label *out = xcalloc(n, sizeof *out);
   size_t j = 0;
   for (size_t i = 0; i < n; i++) {
-    if (parse_label_entry(json_array_get(arr, i), &out[j]))
+    if (parse_label_entry(json_array_get(arr, i), &out[j])) {
       j++;
+    }
   }
   *count = j;
   return out;
@@ -131,17 +156,20 @@ static Label *parse_labels_array(json_t *arr, size_t *count) {
 
 static Attachment *parse_attachments(json_t *arr, size_t *count) {
   *count = 0;
-  if (!arr || !json_is_array(arr))
+  if (!arr || !json_is_array(arr)) {
     return NULL;
+  }
   size_t n = json_array_size(arr);
-  if (n == 0)
+  if (n == 0) {
     return NULL;
+  }
   Attachment *out = xcalloc(n, sizeof *out);
   size_t j = 0;
   for (size_t i = 0; i < n; i++) {
     json_t *a = json_array_get(arr, i);
-    if (!json_is_object(a))
+    if (!json_is_object(a)) {
       continue;
+    }
     out[j].url = js_str(a, "url");
     out[j].content_type = js_str(a, "content_type");
     j++;
@@ -155,16 +183,19 @@ static Attachment *parse_attachments(json_t *arr, size_t *count) {
 /* ----------------------------------------------------------------------- */
 
 void category_free(Category *arr, size_t n) {
-  if (!arr)
+  if (!arr) {
     return;
-  for (size_t i = 0; i < n; i++)
+  }
+  for (size_t i = 0; i < n; i++) {
     free(arr[i].title);
+  }
   free(arr);
 }
 
 void feed_free(Feed *arr, size_t n) {
-  if (!arr)
+  if (!arr) {
     return;
+  }
   for (size_t i = 0; i < n; i++) {
     free(arr[i].title);
     free(arr[i].feed_url);
@@ -174,8 +205,9 @@ void feed_free(Feed *arr, size_t n) {
 }
 
 void label_free(Label *arr, size_t n) {
-  if (!arr)
+  if (!arr) {
     return;
+  }
   for (size_t i = 0; i < n; i++) {
     free(arr[i].caption);
     free(arr[i].fg_color);
@@ -207,10 +239,12 @@ static void headline_clear(Headline *h) {
 }
 
 void headline_free(Headline *arr, size_t n) {
-  if (!arr)
+  if (!arr) {
     return;
-  for (size_t i = 0; i < n; i++)
+  }
+  for (size_t i = 0; i < n; i++) {
     headline_clear(&arr[i]);
+  }
   free(arr);
 }
 
@@ -220,17 +254,20 @@ void headline_free(Headline *arr, size_t n) {
 
 Category *parse_categories(json_t *arr, size_t *count) {
   *count = 0;
-  if (!arr || !json_is_array(arr))
+  if (!arr || !json_is_array(arr)) {
     return NULL;
+  }
   size_t n = json_array_size(arr);
-  if (n == 0)
+  if (n == 0) {
     return NULL;
+  }
   Category *out = xcalloc(n, sizeof *out);
   size_t j = 0;
   for (size_t i = 0; i < n; i++) {
     json_t *c = json_array_get(arr, i);
-    if (!json_is_object(c))
+    if (!json_is_object(c)) {
       continue;
+    }
     out[j].id = js_int(c, "id", 0);
     out[j].title = js_str(c, "title");
     out[j].unread = js_int(c, "unread", 0);
@@ -243,17 +280,20 @@ Category *parse_categories(json_t *arr, size_t *count) {
 
 Feed *parse_feeds(json_t *arr, size_t *count) {
   *count = 0;
-  if (!arr || !json_is_array(arr))
+  if (!arr || !json_is_array(arr)) {
     return NULL;
+  }
   size_t n = json_array_size(arr);
-  if (n == 0)
+  if (n == 0) {
     return NULL;
+  }
   Feed *out = xcalloc(n, sizeof *out);
   size_t j = 0;
   for (size_t i = 0; i < n; i++) {
     json_t *f = json_array_get(arr, i);
-    if (!json_is_object(f))
+    if (!json_is_object(f)) {
       continue;
+    }
     out[j].id = js_int(f, "id", 0);
     out[j].title = js_str(f, "title");
     out[j].feed_url = js_str(f, "feed_url");
@@ -302,17 +342,20 @@ static void parse_headline_obj(json_t *h, Headline *out) {
 
 Headline *parse_headlines(json_t *arr, size_t *count) {
   *count = 0;
-  if (!arr || !json_is_array(arr))
+  if (!arr || !json_is_array(arr)) {
     return NULL;
+  }
   size_t n = json_array_size(arr);
-  if (n == 0)
+  if (n == 0) {
     return NULL;
+  }
   Headline *out = xcalloc(n, sizeof *out);
   size_t j = 0;
   for (size_t i = 0; i < n; i++) {
     json_t *h = json_array_get(arr, i);
-    if (!json_is_object(h))
+    if (!json_is_object(h)) {
       continue;
+    }
     parse_headline_obj(h, &out[j]);
     j++;
   }
@@ -327,8 +370,9 @@ Headline *parse_article(json_t *arr, size_t *count) {
 Counter parse_counters(json_t *obj) {
   Counter c;
   memset(&c, 0, sizeof c);
-  if (!obj)
+  if (!obj) {
     return c;
+  }
   /* Counters::get_all() nests some values; support both flat and nested. */
   c.total = js_int(obj, "total", 0);
   c.unread = js_int(obj, "unread", 0);
@@ -345,8 +389,9 @@ Counter parse_counters(json_t *obj) {
     c.published = js_int(sub, "published", c.published);
   }
   if ((sub = json_object_get(obj, "subscribed"))) {
-    if (c.unread == 0)
+    if (c.unread == 0) {
       c.unread = js_int(sub, "unread", c.unread);
+    }
   }
   return c;
 }
@@ -389,13 +434,17 @@ const char *model_virtual_feed_title(int id) {
 }
 
 ItemKind model_classify_feed_id(int id) {
-  if (id > 0)
+  if (id > 0) {
     return ITEM_FEED;
-  if (model_is_virtual_feed(id))
+  }
+  if (model_is_virtual_feed(id)) {
     return ITEM_VIRTUAL;
-  if (id < LABEL_BASE_INDEX)
+  }
+  if (id < LABEL_BASE_INDEX) {
     return ITEM_LABEL;
-  if (id <= PLUGIN_FEED_BASE_INDEX)
+  }
+  if (id <= PLUGIN_FEED_BASE_INDEX) {
     return ITEM_PLUGIN;
+  }
   return ITEM_VIRTUAL;
 }

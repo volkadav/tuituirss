@@ -13,10 +13,14 @@ Contexts: **global** (any pane), **sidebar**, **headlines**, **article**.
 | `G` / `End` | sidebar, headlines | last item (loads more headlines if needed) |
 | `l` / `Tab` / `Right` | global | focus next pane |
 | `h` / `Shift-Tab` / `Left` | global | focus previous pane |
-| `Enter` | sidebar | open feed / category, load headlines |
+| `Enter` | sidebar | open feed, load headlines |
+| `Enter` | sidebar (on a category) | toggle collapsed (`>`) / expanded (`v`) |
 | `Enter` | headlines | open the article |
 | `Space` | headlines | load the selected article without changing focus |
 | `j` / `k` / `PgDn` / `PgUp` | article | scroll the article |
+| `Up` / `Right` | article | select the next detected link |
+| `Down` / `Left` | article | select the previous detected link |
+| `Enter` | article | open the selected link in the external browser |
 | `r` | headline/article | toggle read / unread |
 | `s` | headline/article | toggle starred (marked) |
 | `p` | headline/article | toggle published |

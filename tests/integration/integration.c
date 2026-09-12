@@ -37,8 +37,9 @@ int main(void) {
   const char *url = getenv("TTRSS_URL");
   const char *user = getenv("TTRSS_USER");
   const char *pass = getenv("TTRSS_PASS");
-  if (!pass)
+  if (!pass) {
     pass = getenv("TTUIRSS_PASSWORD");
+  }
 
   if (!url || !user || !pass) {
     fprintf(stderr, "integration: set TTRSS_URL, TTRSS_USER and TTRSS_PASS\n");
@@ -62,8 +63,9 @@ int main(void) {
   printf("integration: %s as %s\n", url, user);
 
   REQUIRE(api_login(api, user, pass) == 0, "login");
-  if (failures)
+  if (failures) {
     goto out;
+  }
 
   char *version = NULL;
   REQUIRE(api_get_version(api, &version) == 0, "getVersion");

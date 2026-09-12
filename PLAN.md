@@ -16,6 +16,10 @@ The reference server is a read-only checkout at `/var/www/html/tt-rss`
   toggle unread/starred/published, mark as read, add/remove labels.
 - Lightweight write workflow: subscribe/unsubscribe feeds, set a note, set score.
 - Comfortable keyboard-first navigation with a three-pane layout.
+- Article reading aids: plain-text rendering plus a selectable list of the URLs
+  detected in a post, opened in an external browser on demand.
+- Accessible presentation: named color themes (`dark`, `light`, and a `mono`
+  theme that emits no ANSI color at all).
 - Single native binary, minimal runtime dependencies (libc, ncurses, libcurl, jansson, libcrypto — the latter already pulled in by libcurl/OpenSSL).
 - Preserve privacy: no credentials logged; no telemetry.
 
@@ -204,7 +208,9 @@ tuituirss/
 │   ├── integration/         # against a local tt-rss instance
 │   └── run_tests.sh
 └── docs/
-    └── keybindings.md
+    ├── keybindings.md
+    ├── manual-testing.md
+    └── tuituirss.1         # man page
 ```
 
 ## UI layout
@@ -247,6 +253,7 @@ Panes are drawn with ncurses windows; resizing re-computes the split ratios.
 | `g`/`G` | lists | first/last item |
 | `h`/`l` or `Tab` | global | move focus between panes |
 | `Enter` | feed | open feed / load headlines |
+| `Enter` | feed category | toggle collapsed (`>`) / expanded (`v`) |
 | `Enter` | headline | open article |
 | `Space` | headline | toggle open in article pane |
 | `r` | headline/article | toggle read/unread |
@@ -263,6 +270,9 @@ Panes are drawn with ncurses windows; resizing re-computes the split ratios.
 | `D` | sidebar (on feed) | unsubscribe feed |
 | `u` | sidebar (on feed) | force update feed (`updateFeed`) |
 | `o` | article | toggle split/full article layout |
+| `Up`/`Right` | article | select next detected link |
+| `Down`/`Left` | article | select previous detected link |
+| `Enter` | article | open selected link in browser |
 | `R` | global | refresh current view |
 | `q` | global | back / quit (quit at top level) |
 | `?` | global | help overlay |
@@ -279,8 +289,9 @@ document in one place.
 
 ### Phase 1 — Config + HTTP + API client
 - `config/`: load `~/.tuituirssrc.json` (overridable with `-c/--config`), fields
-  `server_url`, `username`, `data_dir` (default `~/.tuituirss/`), and TLS options
-  (`insecure` for self-signed certs, `ca_file`).
+  `server_url`, `username`, `data_dir` (default `~/.tuituirss/`), TLS options
+  (`insecure` for self-signed certs, `ca_file`), the external `browser` command,
+  and the `theme` name.
 - Password is prompt-only for v1 (`TTUIRSS_PASSWORD` env var accepted for scripting);
   never persisted.
 - `api/`: `login`, `logout`, `isLoggedIn`, `getVersion`; envelope + error mapping.
@@ -313,6 +324,11 @@ document in one place.
 ### Phase 6 — Polish
 - Search/filter (`/`), view-mode switching, `?` help overlay, unread marker
   consistency, resize handling, session reuse across restarts, README + docs.
+- Article link list with arrow-key navigation and `Enter` to open in the
+  external browser (suspending ncurses so terminal browsers can run).
+- Color themes (`dark`, `light`, `mono`) selectable in config and via
+  `--theme`/`--dark`/`--light`/`--mono`; `mono` disables ANSI color entirely.
+- `tuituirss(1)` man page under `docs/`.
 
 ## Testing strategy
 
@@ -334,7 +350,10 @@ document in one place.
 - Respect `NOT_LOGGED_IN` by transparently re-login when a password is available.
 - Validate all server-supplied strings before display: lengths, embedded control
   chars (strip `\x00`, `\r`), and treat article content as untrusted HTML that
-  must be converted to plain text (never passed to a browser/terminal escape).
+  must be converted to plain text. URLs are only ever handed to the configured
+  browser as an `execvp` argument (no shell), and only after the user selects
+  them explicitly; they are never interpolated into a shell command or a
+  terminal escape.
 - Handle `SIGWINCH` for resize (recompute split ratios and re-clamp page size)
   and `SIGINT`/`SIGTERM` to restore the terminal.
 
@@ -348,6 +367,13 @@ document in one place.
    of the server URL.
 4. **Headline paging** — `limit`/`skip`; default page size = current headline-pane
    height, re-clamped on terminal resize.
-5. **License** — MIT. tuituirss is an independent client that talks to tt-rss
+5. **External browser** — article links open through a configurable `browser`
+   command (default `$BROWSER`, else `xdg-open`, or `open` on macOS). The command
+   is split on whitespace and `exec`'d directly (no shell) with the URL appended;
+   ncurses is suspended while it runs so terminal browsers work.
+6. **Color themes** — named `dark` (default), `light`, and `mono`. `mono` skips
+   color initialization entirely and distinguishes states with attributes
+   (reverse, bold, dim, underline) only.
+7. **License** — MIT. tuituirss is an independent client that talks to tt-rss
    over its JSON API and shares no tt-rss code, so tt-rss's GPL-3.0-or-later
    does not apply to it.

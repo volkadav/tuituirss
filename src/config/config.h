@@ -12,6 +12,8 @@ typedef struct {
   char *username;
   char *data_dir;  /* expanded absolute-ish path */
   char *ca_file;   /* optional CA bundle */
+  char *browser;   /* command used to open links (e.g. "xdg-open") */
+  char *theme;     /* color theme: "dark" (default) or "light" */
   bool insecure;   /* skip TLS verification (self-signed certs) */
   int timeout_sec; /* network timeout, seconds */
   bool debug;      /* enable debug logging */

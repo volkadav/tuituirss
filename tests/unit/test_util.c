@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 #include "test.h"
+#include "ui/ui.h"
 #include "util/util.h"
 
 #include <stdlib.h>
@@ -71,7 +72,41 @@ void test_util(void) {
   CHECK_STR(dec, "caf\xc3\xa9 <x>");
   free(dec);
 
-  /* --- adversarial sanitisation ------------------------------------- */
+  /* --- URL extraction ------------------------------------------------ */
+  size_t nurls = 0;
+  char **urls =
+      url_extract("see https://example.com/a and http://b.test/x.", &nurls);
+  CHECK(nurls == 2);
+  CHECK_STR(urls[0], "https://example.com/a");
+  CHECK_STR(urls[1], "http://b.test/x");
+  url_free(urls, nurls);
+
+  /* trailing punctuation and unmatched parens are trimmed */
+  urls = url_extract("(see http://x.test/y) done", &nurls);
+  CHECK(nurls == 1);
+  CHECK_STR(urls[0], "http://x.test/y");
+  url_free(urls, nurls);
+
+  /* matched parens inside a URL are preserved */
+  urls = url_extract("(https://en.wikipedia.org/wiki/C_(language)) ok", &nurls);
+  CHECK(nurls == 1);
+  CHECK_STR(urls[0], "https://en.wikipedia.org/wiki/C_(language)");
+  url_free(urls, nurls);
+
+  urls = url_extract("no links here", &nurls);
+  CHECK(nurls == 0);
+  CHECK(urls == NULL);
+  url_free(urls, nurls);
+
+  /* --- color theme names -------------------------------------------- */
+  CHECK(render_theme_valid("dark"));
+  CHECK(render_theme_valid("light"));
+  CHECK(render_theme_valid("mono"));
+  CHECK(!render_theme_valid("solarized"));
+  CHECK(!render_theme_valid(""));
+  CHECK(!render_theme_valid(NULL));
+
+  /* --- adversarial sanitization ------------------------------------- */
 
   /* raw ESC (ANSI) is stripped */
   char ctrl[64];

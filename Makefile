@@ -50,6 +50,12 @@ MAIN_OBJ := src/main.o
 OBJ      := $(LIB_OBJ) $(MAIN_OBJ)
 
 BIN      := tuituirss
+MANPAGE  := docs/tuituirss.1
+
+# Installation paths (override PREFIX/DESTDIR as usual).
+PREFIX   ?= /usr/local
+BINDIR   ?= $(PREFIX)/bin
+MANDIR   ?= $(PREFIX)/share/man/man1
 
 TEST_SRC := $(wildcard tests/unit/*.c)
 TEST_BIN := tests/unit/run
@@ -62,12 +68,20 @@ FUZZ_BIN  := tests/fuzz/fuzz
 FUZZ_SRC  := tests/fuzz/fuzz_all.c
 FUZZ_TIME ?= 30
 
-.PHONY: all clean test integration asan analyze fuzz
+.PHONY: all clean test integration asan analyze fuzz man install
 
 all: $(BIN)
 
 $(BIN): $(OBJ)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJ) $(LDLIBS)
+
+man:
+	man ./$(MANPAGE)
+
+install: $(BIN)
+	install -d $(DESTDIR)$(BINDIR) $(DESTDIR)$(MANDIR)
+	install -m 0755 $(BIN) $(DESTDIR)$(BINDIR)/$(BIN)
+	install -m 0644 $(MANPAGE) $(DESTDIR)$(MANDIR)/tuituirss.1
 
 %.o: %.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<

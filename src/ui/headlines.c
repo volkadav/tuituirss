@@ -51,8 +51,9 @@ int headlines_load(App *app, int feed_id, bool is_cat, const char *title) {
 }
 
 int headlines_load_more(App *app) {
-  if (!app->head_has_more)
+  if (!app->head_has_more) {
     return 0;
+  }
   int skip = (int)app->nheads;
   Headline *more = NULL;
   size_t nmore = 0;
@@ -83,30 +84,37 @@ int headlines_load_more(App *app) {
 }
 
 Headline *headline_current(App *app) {
-  if (app->head_sel < 0 || (size_t)app->head_sel >= app->nheads)
+  if (app->head_sel < 0 || (size_t)app->head_sel >= app->nheads) {
     return NULL;
+  }
   return &app->heads[app->head_sel];
 }
 
 void headlines_move(App *app, int delta) {
-  if (app->nheads == 0)
+  if (app->nheads == 0) {
     return;
+  }
   int idx = app->head_sel + delta;
-  if (idx < 0)
+  if (idx < 0) {
     idx = 0;
+  }
   if ((size_t)idx >= app->nheads) {
     if (app->head_has_more) {
-      if (headlines_load_more(app) != 0)
+      if (headlines_load_more(app) != 0) {
         return;
+      }
     }
-    if ((size_t)idx >= app->nheads)
+    if ((size_t)idx >= app->nheads) {
       idx = (int)app->nheads - 1;
+    }
   }
   app->head_sel = idx;
-  if (app->head_sel < app->head_top)
+  if (app->head_sel < app->head_top) {
     app->head_top = app->head_sel;
-  if (app->head_rows > 0 && app->head_sel >= app->head_top + app->head_rows)
+  }
+  if (app->head_rows > 0 && app->head_sel >= app->head_top + app->head_rows) {
     app->head_top = app->head_sel - app->head_rows + 1;
+  }
 }
 
 void headlines_home(App *app) {
@@ -115,41 +123,49 @@ void headlines_home(App *app) {
 }
 
 void headlines_end(App *app) {
-  while (app->head_has_more)
-    if (headlines_load_more(app) != 0)
+  while (app->head_has_more) {
+    if (headlines_load_more(app) != 0) {
       break;
-  if (app->nheads > 0)
+    }
+  }
+  if (app->nheads > 0) {
     app->head_sel = (int)app->nheads - 1;
-  if (app->head_rows > 0 && app->head_sel >= app->head_top + app->head_rows)
+  }
+  if (app->head_rows > 0 && app->head_sel >= app->head_top + app->head_rows) {
     app->head_top = app->head_sel - app->head_rows + 1;
+  }
 }
 
 void headlines_draw(App *app) {
   WINDOW *w = app->head_win;
-  if (!w)
+  if (!w) {
     return;
+  }
   werase(w);
-  box(w, 0, 0);
+  render_box(w, app->focus == PANE_HEADLINES);
   int width = app->right_w - 2;
 
   for (int r = 0; r < app->head_rows; r++) {
     int idx = app->head_top + r;
-    if (idx < 0 || (size_t)idx >= app->nheads)
+    if (idx < 0 || (size_t)idx >= app->nheads) {
       break;
+    }
     Headline *h = &app->heads[idx];
     int y = r + 1;
     bool selected = (idx == app->head_sel);
 
     int attr;
-    if (selected)
+    if (selected) {
       attr = COLOR_PAIR(CP_SELECTED) | A_BOLD;
-    else if (h->unread)
+    } else if (h->unread) {
       attr = COLOR_PAIR(CP_UNREAD) | A_BOLD;
-    else
-      attr = COLOR_PAIR(CP_READ);
+    } else {
+      attr = ATTR_READ;
+    }
 
-    if (selected)
+    if (selected) {
       render_fill(w, y, 1, width, attr);
+    }
 
     char marks[8];
     snprintf(marks, sizeof marks, "%c%c%c", h->unread ? 'o' : ' ',
@@ -168,10 +184,12 @@ void headlines_draw(App *app) {
 
 int headlines_activate(App *app) {
   Headline *h = headline_current(app);
-  if (!h)
+  if (!h) {
     return -1;
-  if (article_load(app, h->id) != 0)
+  }
+  if (article_load(app, h->id) != 0) {
     return -1;
+  }
   app->focus = PANE_ARTICLE;
   return 0;
 }

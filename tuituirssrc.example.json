@@ -4,6 +4,8 @@
   "data_dir": "~/.tuituirss",
   "insecure": false,
   "ca_file": null,
+  "browser": "xdg-open",
+  "theme": "dark",
   "timeout_sec": 30,
   "debug": false,
   "log_file": null

@@ -5,6 +5,18 @@
 #include <stdlib.h>
 #include <string.h>
 
+static void article_links_free(App *app) {
+  if (app->art_links) {
+    for (size_t i = 0; i < app->art_nlinks; i++) {
+      free(app->art_links[i].url);
+    }
+    free(app->art_links);
+  }
+  app->art_links = NULL;
+  app->art_nlinks = 0;
+  app->art_link_sel = -1;
+}
+
 void article_clear(App *app) {
   if (app->article) {
     headline_free(app->article, 1);
@@ -13,6 +25,7 @@ void article_clear(App *app) {
   artline_free(app->art_lines, app->art_nlines);
   app->art_lines = NULL;
   app->art_nlines = 0;
+  article_links_free(app);
   app->art_scroll = 0;
   app->art_wrap_width = 0;
 }
@@ -22,18 +35,38 @@ static void add_blank(App *app, size_t *cap) {
               &app->art_nlines, cap);
 }
 
+/* Append a URL to a de-duplicated, dynamically grown string array. */
+static void url_add(char ***urls, size_t *n, size_t *cap, const char *url) {
+  if (!url || !*url) {
+    return;
+  }
+  for (size_t i = 0; i < *n; i++) {
+    if (strcmp((*urls)[i], url) == 0) {
+      return;
+    }
+  }
+  if (*n == *cap) {
+    *cap = *cap ? *cap * 2 : 8;
+    *urls = xrealloc(*urls, *cap * sizeof **urls);
+  }
+  (*urls)[(*n)++] = xstrdup(url);
+}
+
 void article_rebuild(App *app) {
   artline_free(app->art_lines, app->art_nlines);
   app->art_lines = NULL;
   app->art_nlines = 0;
+  article_links_free(app);
   app->art_scroll = 0;
 
-  if (!app->article)
+  if (!app->article) {
     return;
+  }
 
   int width = app->art_cols - 2;
-  if (width < 4)
+  if (width < 4) {
     width = 4;
+  }
   app->art_wrap_width = width;
 
   size_t cap = 0;
@@ -62,8 +95,9 @@ void article_rebuild(App *app) {
   if (a->nlabels > 0) {
     char labels[1024] = "Labels: ";
     for (size_t i = 0; i < a->nlabels; i++) {
-      if (i)
+      if (i) {
         strncat(labels, ", ", sizeof labels - strlen(labels) - 1);
+      }
       strncat(labels, a->labels[i].caption ? a->labels[i].caption : "",
               sizeof labels - strlen(labels) - 1);
     }
@@ -99,6 +133,39 @@ void article_rebuild(App *app) {
                   &cap);
     }
   }
+
+  /* ---- selectable link list ------------------------------------------ */
+  char **urls = NULL;
+  size_t nurls = 0, ucap = 0;
+  url_add(&urls, &nurls, &ucap, a->link);
+  url_add(&urls, &nurls, &ucap, a->comments_link);
+  for (size_t i = 0; i < a->nattachments; i++) {
+    url_add(&urls, &nurls, &ucap, a->attachments[i].url);
+  }
+
+  size_t ncontent = 0;
+  char **content_urls = url_extract(text, &ncontent);
+  for (size_t i = 0; i < ncontent; i++) {
+    url_add(&urls, &nurls, &ucap, content_urls[i]);
+  }
+  url_free(content_urls, ncontent);
+
+  if (nurls > 0) {
+    add_blank(app, &cap);
+    render_wrap("Links:", width, COLOR_PAIR(CP_FEED) | A_BOLD, &app->art_lines,
+                &app->art_nlines, &cap);
+    app->art_links = xcalloc(nurls, sizeof(ArtLink));
+    for (size_t i = 0; i < nurls; i++) {
+      size_t before = app->art_nlines;
+      render_wrap(urls[i], width, COLOR_PAIR(CP_DEFAULT), &app->art_lines,
+                  &app->art_nlines, &cap);
+      app->art_links[i].url = urls[i]; /* take ownership */
+      app->art_links[i].line = before;
+      app->art_links[i].nlines = app->art_nlines - before;
+    }
+    app->art_nlinks = nurls;
+    free(urls);
+  }
 }
 
 int article_load(App *app, int article_id) {
@@ -128,39 +195,130 @@ int article_load(App *app, int article_id) {
 }
 
 void article_scroll(App *app, int delta) {
-  if (!app->article)
+  if (!app->article) {
     return;
+  }
   int max = (int)app->art_nlines - app->art_rows;
-  if (max < 0)
+  if (max < 0) {
     max = 0;
+  }
   int s = app->art_scroll + delta;
-  if (s < 0)
+  if (s < 0) {
     s = 0;
-  if (s > max)
+  }
+  if (s > max) {
     s = max;
+  }
   app->art_scroll = s;
+}
+
+/* Scroll so the selected link is visible. */
+static void article_link_reveal(App *app) {
+  if (app->art_link_sel < 0 || (size_t)app->art_link_sel >= app->art_nlinks) {
+    return;
+  }
+  ArtLink *l = &app->art_links[app->art_link_sel];
+  int top = (int)l->line;
+  int bottom = (int)(l->line + l->nlines);
+  if (top < app->art_scroll) {
+    app->art_scroll = top;
+  } else if (app->art_rows > 0 && bottom > app->art_scroll + app->art_rows) {
+    app->art_scroll = bottom - app->art_rows;
+  }
+
+  int max = (int)app->art_nlines - app->art_rows;
+  if (max < 0) {
+    max = 0;
+  }
+  if (app->art_scroll < 0) {
+    app->art_scroll = 0;
+  }
+  if (app->art_scroll > max) {
+    app->art_scroll = max;
+  }
+}
+
+void article_link_move(App *app, int delta) {
+  if (app->art_nlinks == 0) {
+    ui_status(app, false, "No links in this article");
+    return;
+  }
+  int n = (int)app->art_nlinks;
+  int sel = app->art_link_sel;
+  if (sel < 0) {
+    sel = delta > 0 ? 0 : n - 1;
+  } else {
+    sel = (sel + delta) % n;
+  }
+  if (sel < 0) {
+    sel += n;
+  }
+  app->art_link_sel = sel;
+  article_link_reveal(app);
+  ui_status(app, false, "Link %d/%d: %s", sel + 1, n, app->art_links[sel].url);
+}
+
+void article_open_link(App *app) {
+  if (app->art_nlinks == 0) {
+    ui_status(app, false, "No links in this article");
+    return;
+  }
+  if (app->art_link_sel < 0 || (size_t)app->art_link_sel >= app->art_nlinks) {
+    ui_status(app, false, "Select a link first (arrows)");
+    return;
+  }
+  const char *url = app->art_links[app->art_link_sel].url;
+  const char *browser = app->cfg->browser;
+
+  /* Release the terminal so terminal browsers can take it over. */
+  def_prog_mode();
+  endwin();
+  int rc = url_open(browser, url);
+  reset_prog_mode();
+  clearok(stdscr, TRUE);
+  refresh();
+
+  if (rc != 0) {
+    ui_status(app, true, "Failed to launch browser: %s",
+              browser ? browser : "");
+  } else {
+    ui_status(app, false, "Opened %s", url);
+  }
 }
 
 void article_draw(App *app) {
   WINDOW *w = app->art_win;
-  if (!w)
+  if (!w) {
     return;
+  }
   werase(w);
-  box(w, 0, 0);
+  render_box(w, app->focus == PANE_ARTICLE);
 
   if (!app->article) {
     render_text(w, 1, 2, app->art_cols - 3, "(select a headline to read)",
-                COLOR_PAIR(CP_READ));
+                ATTR_READ);
     wnoutrefresh(w);
     return;
   }
 
+  int sel_first = -1, sel_last = -1;
+  if (app->art_link_sel >= 0 && (size_t)app->art_link_sel < app->art_nlinks) {
+    ArtLink *l = &app->art_links[app->art_link_sel];
+    sel_first = (int)l->line;
+    sel_last = (int)(l->line + l->nlines) - 1;
+  }
+
   for (int r = 0; r < app->art_rows; r++) {
     int idx = app->art_scroll + r;
-    if (idx < 0 || (size_t)idx >= app->art_nlines)
+    if (idx < 0 || (size_t)idx >= app->art_nlines) {
       break;
+    }
     ArtLine *l = &app->art_lines[idx];
-    render_text(w, r + 1, 1, app->art_cols - 2, l->text, l->attr);
+    int attr = l->attr;
+    if (idx >= sel_first && idx <= sel_last) {
+      attr = COLOR_PAIR(CP_SELECTED);
+    }
+    render_text(w, r + 1, 1, app->art_cols - 2, l->text, attr);
   }
   wnoutrefresh(w);
 }

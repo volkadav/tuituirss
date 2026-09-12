@@ -1,7 +1,7 @@
 # Manual test checklist
 
 Things that are hard to assert automatically (layout, resize, terminal
-behaviour). Run against a live or mock tt-rss server.
+behavior). Run against a live or mock tt-rss server.
 
 ## Layout
 
@@ -39,6 +39,26 @@ behaviour). Run against a live or mock tt-rss server.
 - [ ] `a` cycles view modes and reloads headlines.
 - [ ] `/` filters the current feed; an empty filter clears it.
 
+## Links
+
+- [ ] An article containing URLs shows a `Links:` list and highlights the
+      selected entry.
+- [ ] `Up`/`Right` and `Down`/`Left` step through the links (wrapping around)
+      and scroll the article so the selection stays visible.
+- [ ] `Enter` opens the selected link. A terminal browser such as `links` takes
+      over the terminal and the TUI redraws cleanly on exit.
+- [ ] A missing or failing `browser` command reports an error in the status bar.
+
+## Themes
+
+- [ ] `--dark`, `--light` and `--mono` (or `theme` in the config) change the
+      palette.
+- [ ] Under `mono` no ANSI color sequences are emitted (capture with `script`
+      or run in a monochrome terminal); read items stay legible on a black
+      background.
+- [ ] An unknown theme name falls back to the default and warns in the status
+      bar.
+
 ## Feeds
 
 - [ ] `A` subscribes to a new URL and refreshes the sidebar.
@@ -62,7 +82,7 @@ behaviour). Run against a live or mock tt-rss server.
 ## Security
 
 - [ ] A headline or article containing `&#x1b;[31m` (entity-encoded ESC) shows
-      the literal text and does not change colours or the window title.
+      the literal text and does not change colors or the window title.
 - [ ] Bidi override characters (`&#x202e;`) in a title do not reverse the text.
 - [ ] A very large feed response is rejected with a clear error rather than
       exhausting memory.

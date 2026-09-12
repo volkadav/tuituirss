@@ -26,8 +26,9 @@ void test_session(void) {
   char tmpl[] = "/tmp/tuituirss-sess-XXXXXX";
   char *dir = mkdtemp(tmpl);
   CHECK(dir != NULL);
-  if (!dir)
+  if (!dir) {
     return;
+  }
 
   Config *cfg = make_cfg(dir);
 
@@ -65,8 +66,9 @@ void test_session(void) {
   if (vfd >= 0) {
     ssize_t n = read(vfd, vbuf, sizeof vbuf - 1);
     close(vfd);
-    if (n > 0)
+    if (n > 0) {
       vbuf[n] = '\0';
+    }
   }
   CHECK_STR(vbuf, "SECRET");
   unlink(path);

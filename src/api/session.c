@@ -22,28 +22,34 @@ char *session_path(const Config *cfg) {
 }
 
 int session_load(const Config *cfg, char **sid_out, int *level_out) {
-  if (sid_out)
+  if (sid_out) {
     *sid_out = NULL;
-  if (level_out)
+  }
+  if (level_out) {
     *level_out = 0;
+  }
 
   autofree char *path = session_path(cfg);
   int fd = open(path, O_RDONLY | O_NOFOLLOW);
-  if (fd < 0)
+  if (fd < 0) {
     return -1;
+  }
   json_error_t err;
   json_t *root = json_loadfd(fd, 0, &err);
   close(fd);
-  if (!root)
+  if (!root) {
     return -1;
+  }
 
   int rc = -1;
   const char *sid = json_string_value(json_object_get(root, "session_id"));
   if (sid && *sid) {
-    if (sid_out)
+    if (sid_out) {
       *sid_out = xstrdup(sid);
-    if (level_out)
+    }
+    if (level_out) {
       *level_out = (int)json_integer_value(json_object_get(root, "api_level"));
+    }
     rc = 0;
   }
   json_decref(root);
@@ -51,10 +57,12 @@ int session_load(const Config *cfg, char **sid_out, int *level_out) {
 }
 
 int session_save(const Config *cfg, const char *sid, int level) {
-  if (!sid || !*sid)
+  if (!sid || !*sid) {
     return -1;
-  if (ensure_private_dir(cfg->data_dir) != 0)
+  }
+  if (ensure_private_dir(cfg->data_dir) != 0) {
     return -1;
+  }
 
   json_t *root = json_object();
   json_object_set_new(root, "session_id", json_string(sid));
@@ -78,8 +86,9 @@ int session_save(const Config *cfg, const char *sid, int level) {
     return -1;
   }
   int rc = json_dumpf(root, fp, JSON_INDENT(2) | JSON_COMPACT);
-  if (fflush(fp) != 0)
+  if (fflush(fp) != 0) {
     rc = -1;
+  }
   fclose(fp);
   json_decref(root);
   return rc == 0 ? 0 : -1;

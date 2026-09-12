@@ -15,7 +15,7 @@
  *
  *     autofree char *s = xstrdup(...);   // freed at scope exit
  *
- * Always initialise the variable (use NULL if the value is assigned later);
+ * Always initialize the variable (use NULL if the value is assigned later);
  * the handler calls free() unconditionally. Do not use it on a pointer whose
  * ownership is transferred (returned, or stored into another owner).
  */
@@ -53,6 +53,18 @@ char *html_entity_decode(const char *s);
 /* Convert untrusted HTML into plain text: tags removed, block elements turned
  * into newlines, entities decoded. The result is safe to draw in a terminal. */
 char *html_to_text(const char *html);
+
+/* ---- urls ------------------------------------------------------------- */
+/* Extract http(s) URLs from text. Returns a newly allocated array of newly
+ * allocated strings, or NULL with *count == 0. Free with url_free. */
+char **url_extract(const char *text, size_t *count);
+void url_free(char **urls, size_t n);
+/* Launch `url` using the `browser` command (parsed on whitespace, executed
+ * without a shell; the URL is passed as the final argument) and wait for it to
+ * exit. The caller is responsible for releasing the terminal first (e.g.
+ * endwin) so terminal browsers can draw. Returns 0 on success, -1 on failure
+ * to launch. */
+int url_open(const char *browser, const char *url);
 
 /* ---- paths ------------------------------------------------------------ */
 /* Expand a leading "~/" to $HOME. Returns a newly allocated string. */

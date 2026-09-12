@@ -32,6 +32,8 @@ needed beyond enabling API access for your user.
   update.
 - View modes: all, unread, adaptive, marked, updated, published, has note.
 - Simple headline filtering and headline paging.
+- Article link navigation: step through the URLs detected in a post and open
+  the selected one in an external browser.
 - Session reuse across restarts (the password is never stored).
 
 ## Dependencies
@@ -55,6 +57,8 @@ sudo apt install build-essential pkg-config libcurl4-openssl-dev \
 ```sh
 make            # builds ./tuituirss
 make test       # builds and runs the unit tests
+make man        # view the tuituirss(1) man page
+make install    # install the binary and man page (PREFIX=/usr/local)
 ```
 
 ## Configuration
@@ -68,6 +72,8 @@ Copy `tuituirssrc.example.json` to `~/.tuituirssrc.json` and edit it:
   "data_dir": "~/.tuituirss",
   "insecure": false,
   "ca_file": null,
+  "browser": "xdg-open",
+  "theme": "dark",
   "timeout_sec": 30,
   "debug": false,
   "log_file": null
@@ -81,6 +87,8 @@ Copy `tuituirssrc.example.json` to `~/.tuituirssrc.json` and edit it:
 | `data_dir` | Where the session cache and logs live (default `~/.tuituirss`) |
 | `insecure` | Skip TLS verification (self-signed certificates) |
 | `ca_file` | Optional custom CA bundle |
+| `browser` | Command used to open article links (default `$BROWSER`, else `xdg-open`; `open` on macOS). Arguments are allowed, e.g. `firefox --new-tab` |
+| `theme` | Color theme: `dark` (default), `light`, or `mono` (no ANSI colors, attributes only). Override with `--theme`, `--dark`, `--light` or `--mono` |
 | `timeout_sec` | Network timeout in seconds |
 | `debug` | Write a debug log (credentials are redacted) |
 | `log_file` | Log path; defaults to `data_dir/tuituirss.log` when `debug` is on |
@@ -98,11 +106,13 @@ scripting, set `TTUIRSS_PASSWORD` to skip the prompt.
 ```sh
 ./tuituirss
 ./tuituirss -c /path/to/config.json
+./tuituirss --dark          # force the dark color theme
 ```
 
 Use `j`/`k` to move, `Enter` to open, `h`/`l` or `Tab` to move between panes,
-and `?` for the full keybinding list. See
-[docs/keybindings.md](docs/keybindings.md).
+and `?` for the full keybinding list. In the article pane, the arrow keys step
+through the detected links and `Enter` opens the selected one in your browser.
+See [docs/keybindings.md](docs/keybindings.md).
 
 ## Testing and analysis
 
@@ -128,11 +138,15 @@ the envelope decoder under ASan/UBSan; tune the duration with `FUZZ_TIME`.
 The server response is semi-trusted and the feed/article strings inside it are
 untrusted, so:
 
-- **Terminal escape injection**: all displayed strings are sanitised. Control
+- **Terminal escape injection**: all displayed strings are sanitized. Control
   characters (C0/C1), DEL, bidi overrides/isolates and zero-width marks are
   removed — including code points smuggled in as HTML entities (`&#x1b;`,
   `&#0;`, `&#x202e;`). Invalid UTF-8 is dropped. Article HTML is converted to
-  plain text; nothing is rendered, executed, or opened externally.
+  plain text, so nothing in a feed is rendered or executed.
+- **External browser**: URLs are only ever handed to the configured `browser`
+  command as an `execvp` argument (no shell), and only after you select one and
+  press `Enter`. They are never interpolated into a shell command or terminal
+  escape.
 - **Response limits**: a single API response is capped (16 MiB, after
   decompression) to bound memory use and resist decompression bombs.
 - **Transport**: TLS verification is on by default; redirects are not followed
@@ -164,10 +178,11 @@ tests/
   unit/         parser/model/config/envelope/session tests (no network)
   integration/  live-server API test
   fuzz/         libFuzzer harness for the untrusted-input parsers
-docs/           keybindings and manual test notes
+docs/           keybindings, manual test notes, and the tuituirss(1) man page
 ```
 
-See [PLAN.md](PLAN.md) for the full design.
+See [PLAN.md](PLAN.md) for the full design and [docs/tuituirss.1](docs/tuituirss.1)
+for the man page.
 
 ## License
 

@@ -16,16 +16,19 @@ static bool g_debug = false;
 
 void log_init(const char *path, bool debug) {
   g_debug = debug;
-  if (!path || !*path)
+  if (!path || !*path) {
     return;
+  }
   int fd = open(path, O_CREAT | O_WRONLY | O_APPEND | O_NOFOLLOW, 0600);
-  if (fd < 0)
+  if (fd < 0) {
     return;
+  }
   /* Make sure pre-existing files are not group/world readable. */
   fchmod(fd, 0600);
   g_log = fdopen(fd, "a");
-  if (!g_log)
+  if (!g_log) {
     close(fd);
+  }
 }
 
 void log_close(void) {
@@ -36,8 +39,9 @@ void log_close(void) {
 }
 
 static void log_line(const char *level, const char *fmt, va_list ap) {
-  if (!g_log)
+  if (!g_log) {
     return;
+  }
   time_t now = time(NULL);
   struct tm tm;
   localtime_r(&now, &tm);
@@ -50,8 +54,9 @@ static void log_line(const char *level, const char *fmt, va_list ap) {
 }
 
 void log_debug(const char *fmt, ...) {
-  if (!g_log || !g_debug)
+  if (!g_log || !g_debug) {
     return;
+  }
   va_list ap;
   va_start(ap, fmt);
   log_line("debug", fmt, ap);
@@ -59,8 +64,9 @@ void log_debug(const char *fmt, ...) {
 }
 
 void log_error(const char *fmt, ...) {
-  if (!g_log)
+  if (!g_log) {
     return;
+  }
   va_list ap;
   va_start(ap, fmt);
   log_line("error", fmt, ap);
@@ -71,19 +77,22 @@ void log_error(const char *fmt, ...) {
  * request body can be logged without leaking credentials. Returns a newly
  * allocated string; caller frees. */
 char *log_redact_json(const char *json) {
-  if (!json)
+  if (!json) {
     return xstrdup("");
+  }
 
   json_error_t err;
   json_t *obj = json_loads(json, 0, &err);
-  if (!obj)
+  if (!obj) {
     return xstrdup(json);
+  }
 
   if (json_is_object(obj)) {
     static const char *keys[] = {"password", "sid", "session_id", NULL};
     for (int k = 0; keys[k]; k++) {
-      if (json_object_get(obj, keys[k]))
+      if (json_object_get(obj, keys[k])) {
         json_object_set_new(obj, keys[k], json_string("***"));
+      }
     }
   }
 

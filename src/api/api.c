@@ -55,8 +55,9 @@ static size_t write_cb(char *ptr, size_t size, size_t nmemb, void *userdata) {
   }
   if (c->response_len + n + 1 > c->response_cap) {
     size_t cap = c->response_cap ? c->response_cap : 4096;
-    while (cap < c->response_len + n + 1)
+    while (cap < c->response_len + n + 1) {
       cap *= 2;
+    }
     c->response = xrealloc(c->response, cap);
     c->response_cap = cap;
   }
@@ -73,7 +74,7 @@ ApiClient *api_new(const Config *cfg) {
   c->last_error = API_OK;
   c->curl = curl_easy_init();
   if (!c->curl) {
-    set_error(c, API_ERR_NETWORK, "failed to initialise libcurl");
+    set_error(c, API_ERR_NETWORK, "failed to initialize libcurl");
     free(c);
     return NULL;
   }
@@ -84,12 +85,15 @@ ApiClient *api_new(const Config *cfg) {
 }
 
 void api_free(ApiClient *c) {
-  if (!c)
+  if (!c) {
     return;
-  if (c->curl)
+  }
+  if (c->curl) {
     curl_easy_cleanup(c->curl);
-  if (c->headers)
+  }
+  if (c->headers) {
     curl_slist_free_all(c->headers);
+  }
   free(c->session_id);
   free(c->server_version);
   free(c->response);
@@ -106,8 +110,9 @@ ApiError api_last_error(const ApiClient *c) {
 }
 
 const char *api_last_error_string(const ApiClient *c) {
-  if (!c)
+  if (!c) {
     return "no client";
+  }
   return c->error[0] ? c->error : "unknown error";
 }
 
@@ -116,16 +121,18 @@ const char *api_session_id(const ApiClient *c) {
 }
 
 void api_set_session(ApiClient *c, const char *sid, int api_level) {
-  if (!c)
+  if (!c) {
     return;
+  }
   free(c->session_id);
   c->session_id = sid ? xstrdup(sid) : NULL;
   c->level = api_level;
 }
 
 void api_set_credentials(ApiClient *c, const char *user, const char *password) {
-  if (!c)
+  if (!c) {
     return;
+  }
   free(c->username);
   c->username = user ? xstrdup(user) : NULL;
   if (c->password) {
@@ -148,46 +155,60 @@ const char *api_server_version(const ApiClient *c) {
 /* ----------------------------------------------------------------------- */
 
 ApiError api_error_from_code(const char *code) {
-  if (!code)
+  if (!code) {
     return API_ERR_STATUS;
-  if (strcmp(code, "NOT_LOGGED_IN") == 0)
+  }
+  if (strcmp(code, "NOT_LOGGED_IN") == 0) {
     return API_ERR_NOT_LOGGED_IN;
-  if (strcmp(code, "LOGIN_ERROR") == 0)
+  }
+  if (strcmp(code, "LOGIN_ERROR") == 0) {
     return API_ERR_LOGIN;
-  if (strcmp(code, "API_DISABLED") == 0)
+  }
+  if (strcmp(code, "API_DISABLED") == 0) {
     return API_ERR_API_DISABLED;
-  if (strcmp(code, "UNKNOWN_METHOD") == 0)
+  }
+  if (strcmp(code, "UNKNOWN_METHOD") == 0) {
     return API_ERR_UNKNOWN_METHOD;
-  if (strcmp(code, "INCORRECT_USAGE") == 0)
+  }
+  if (strcmp(code, "INCORRECT_USAGE") == 0) {
     return API_ERR_INCORRECT_USAGE;
-  if (strcmp(code, "E_OPERATION_FAILED") == 0)
+  }
+  if (strcmp(code, "E_OPERATION_FAILED") == 0) {
     return API_ERR_OPERATION_FAILED;
-  if (strcmp(code, "E_NOT_FOUND") == 0)
+  }
+  if (strcmp(code, "E_NOT_FOUND") == 0) {
     return API_ERR_NOT_FOUND;
+  }
   return API_ERR_STATUS;
 }
 
 int api_parse_envelope(const char *json, ApiError *err_out, char *errmsg,
                        size_t errmsg_len, json_t **content_out) {
-  if (content_out)
+  if (content_out) {
     *content_out = NULL;
-  if (err_out)
+  }
+  if (err_out) {
     *err_out = API_OK;
+  }
 
   json_error_t jerr;
   json_t *root = json_loads(json ? json : "", 0, &jerr);
   if (!root) {
-    if (err_out)
+    if (err_out) {
       *err_out = API_ERR_PARSE;
-    if (errmsg && errmsg_len)
+    }
+    if (errmsg && errmsg_len) {
       snprintf(errmsg, errmsg_len, "invalid JSON response: %s", jerr.text);
+    }
     return -1;
   }
   if (!json_is_object(root)) {
-    if (err_out)
+    if (err_out) {
       *err_out = API_ERR_PARSE;
-    if (errmsg && errmsg_len)
+    }
+    if (errmsg && errmsg_len) {
       snprintf(errmsg, errmsg_len, "response is not a JSON object");
+    }
     json_decref(root);
     return -1;
   }
@@ -196,26 +217,31 @@ int api_parse_envelope(const char *json, ApiError *err_out, char *errmsg,
   if (!json_is_integer(status) || json_integer_value(status) != 0) {
     json_t *content = json_object_get(root, "content");
     const char *code = NULL;
-    if (json_is_object(content))
+    if (json_is_object(content)) {
       code = json_string_value(json_object_get(content, "error"));
-    if (err_out)
+    }
+    if (err_out) {
       *err_out = api_error_from_code(code);
-    if (errmsg && errmsg_len)
+    }
+    if (errmsg && errmsg_len) {
       snprintf(errmsg, errmsg_len, "server error: %s", code ? code : "unknown");
+    }
     json_decref(root);
     return -1;
   }
 
   json_t *content = json_object_get(root, "content");
-  if (content)
+  if (content) {
     json_incref(content);
-  else
+  } else {
     content = json_object();
+  }
   json_decref(root);
-  if (content_out)
+  if (content_out) {
     *content_out = content;
-  else
+  } else {
     json_decref(content);
+  }
   return 0;
 }
 
@@ -224,26 +250,30 @@ int api_parse_envelope(const char *json, ApiError *err_out, char *errmsg,
 /* ----------------------------------------------------------------------- */
 
 static json_t *api_call_once(ApiClient *c, const char *op, json_t *params) {
-  if (!c || !c->curl)
+  if (!c || !c->curl) {
     return NULL;
+  }
   c->last_error = API_OK;
   c->error[0] = '\0';
   c->response_len = 0;
   c->too_large = false;
-  if (c->response)
+  if (c->response) {
     c->response[0] = '\0';
+  }
 
   json_t *req = json_object();
   json_object_set_new(req, "op", json_string(op));
-  if (params)
+  if (params) {
     json_object_update(req, params);
-  if (c->session_id && strcmp(op, "login") != 0)
+  }
+  if (c->session_id && strcmp(op, "login") != 0) {
     json_object_set_new(req, "sid", json_string(c->session_id));
+  }
 
   autofree char *body = json_dumps(req, JSON_COMPACT);
   json_decref(req);
   if (!body) {
-    set_error(c, API_ERR_PARSE, "failed to serialise request");
+    set_error(c, API_ERR_PARSE, "failed to serialize request");
     return NULL;
   }
   autofree char *redacted = log_redact_json(body);
@@ -270,8 +300,9 @@ static json_t *api_call_once(ApiClient *c, const char *op, json_t *params) {
 #else
   {
     long proto = CURLPROTO_HTTPS;
-    if (strncmp(c->cfg->server_url, "https:", 6) != 0)
+    if (strncmp(c->cfg->server_url, "https:", 6) != 0) {
       proto |= CURLPROTO_HTTP;
+    }
     curl_easy_setopt(c->curl, CURLOPT_PROTOCOLS, proto);
   }
 #endif
@@ -286,8 +317,9 @@ static json_t *api_call_once(ApiClient *c, const char *op, json_t *params) {
     curl_easy_setopt(c->curl, CURLOPT_SSL_VERIFYPEER, 1L);
     curl_easy_setopt(c->curl, CURLOPT_SSL_VERIFYHOST, 2L);
   }
-  if (c->cfg->ca_file && *c->cfg->ca_file)
+  if (c->cfg->ca_file && *c->cfg->ca_file) {
     curl_easy_setopt(c->curl, CURLOPT_CAINFO, c->cfg->ca_file);
+  }
 
   CURLcode rc = curl_easy_perform(c->curl);
   if (c->too_large) {
@@ -331,11 +363,13 @@ json_t *api_call(ApiClient *c, const char *op, json_t *params) {
   if (!content && c && api_last_error(c) == API_ERR_NOT_LOGGED_IN &&
       strcmp(op, "login") != 0 && c->username && c->password) {
     /* Session expired: renew it once and replay the request. */
-    if (api_login(c, c->username, c->password) == 0)
+    if (api_login(c, c->username, c->password) == 0) {
       content = api_call_once(c, op, params);
+    }
   }
-  if (params)
+  if (params) {
     json_decref(params);
+  }
   return content;
 }
 
@@ -348,8 +382,9 @@ int api_login(ApiClient *c, const char *user, const char *password) {
   json_object_set_new(p, "user", json_string(user));
   json_object_set_new(p, "password", json_string(password));
   json_t *content = api_call(c, "login", p);
-  if (!content)
+  if (!content) {
     return -1;
+  }
 
   const char *sid = json_string_value(json_object_get(content, "session_id"));
   if (!sid) {
@@ -367,40 +402,47 @@ int api_login(ApiClient *c, const char *user, const char *password) {
 
 int api_logout(ApiClient *c) {
   json_t *content = api_call(c, "logout", NULL);
-  if (content)
+  if (content) {
     json_decref(content);
+  }
   free(c->session_id);
   c->session_id = NULL;
   return content ? 0 : -1;
 }
 
 int api_is_logged_in(ApiClient *c, bool *logged_in) {
-  if (logged_in)
+  if (logged_in) {
     *logged_in = false;
+  }
   json_t *content = api_call(c, "isLoggedIn", NULL);
-  if (!content)
+  if (!content) {
     return -1;
+  }
   json_t *v = json_object_get(content, "status");
   bool ok = false;
-  if (json_is_boolean(v))
+  if (json_is_boolean(v)) {
     ok = json_is_true(v);
-  else if (json_is_integer(v))
+  } else if (json_is_integer(v)) {
     ok = json_integer_value(v) != 0;
-  if (logged_in)
+  }
+  if (logged_in) {
     *logged_in = ok;
+  }
   json_decref(content);
   return 0;
 }
 
 int api_get_version(ApiClient *c, char **version_out) {
   json_t *content = api_call(c, "getVersion", NULL);
-  if (!content)
+  if (!content) {
     return -1;
+  }
   const char *v = json_string_value(json_object_get(content, "version"));
   free(c->server_version);
   c->server_version = v ? xstrdup(v) : NULL;
-  if (version_out)
+  if (version_out) {
     *version_out = c->server_version ? xstrdup(c->server_version) : NULL;
+  }
   json_decref(content);
   return 0;
 }
@@ -418,8 +460,9 @@ int api_get_categories(ApiClient *c, bool unread_only, bool include_empty,
   json_object_set_new(p, "enable_nested", json_true());
   json_object_set_new(p, "include_empty", json_boolean(include_empty));
   json_t *content = api_call(c, "getCategories", p);
-  if (!content)
+  if (!content) {
     return -1;
+  }
   *out = parse_categories(content, count);
   json_decref(content);
   return 0;
@@ -434,8 +477,9 @@ int api_get_feeds(ApiClient *c, int cat_id, bool unread_only,
   json_object_set_new(p, "unread_only", json_boolean(unread_only));
   json_object_set_new(p, "include_nested", json_boolean(include_nested));
   json_t *content = api_call(c, "getFeeds", p);
-  if (!content)
+  if (!content) {
     return -1;
+  }
   *out = parse_feeds(content, count);
   json_decref(content);
   return 0;
@@ -458,11 +502,13 @@ int api_get_headlines(ApiClient *c, int feed_id, bool is_cat, int limit,
   json_object_set_new(p, "show_content", json_boolean(show_content));
   json_object_set_new(p, "include_attachments",
                       json_boolean(include_attachments));
-  if (search && *search)
+  if (search && *search) {
     json_object_set_new(p, "search", json_string(search));
+  }
   json_t *content = api_call(c, "getHeadlines", p);
-  if (!content)
+  if (!content) {
     return -1;
+  }
   *out = parse_headlines(content, count);
   json_decref(content);
   return 0;
@@ -475,8 +521,9 @@ int api_get_article(ApiClient *c, int article_id, Headline **out,
   json_t *p = json_object();
   json_object_set_new(p, "article_id", json_integer(article_id));
   json_t *content = api_call(c, "getArticle", p);
-  if (!content)
+  if (!content) {
     return -1;
+  }
   *out = parse_article(content, count);
   json_decref(content);
   return 0;
@@ -484,8 +531,9 @@ int api_get_article(ApiClient *c, int article_id, Headline **out,
 
 int api_get_counters(ApiClient *c, Counter *out) {
   json_t *content = api_call(c, "getCounters", NULL);
-  if (!content)
+  if (!content) {
     return -1;
+  }
   *out = parse_counters(content);
   json_decref(content);
   return 0;
@@ -495,11 +543,13 @@ int api_get_labels(ApiClient *c, int article_id, Label **out, size_t *count) {
   *out = NULL;
   *count = 0;
   json_t *p = json_object();
-  if (article_id > 0)
+  if (article_id > 0) {
     json_object_set_new(p, "article_id", json_integer(article_id));
+  }
   json_t *content = api_call(c, "getLabels", p);
-  if (!content)
+  if (!content) {
     return -1;
+  }
   *out = parse_labels(content, count);
   json_decref(content);
   return 0;
@@ -507,8 +557,9 @@ int api_get_labels(ApiClient *c, int article_id, Label **out, size_t *count) {
 
 int api_get_config(ApiClient *c, int *num_feeds) {
   json_t *content = api_call(c, "getConfig", NULL);
-  if (!content)
+  if (!content) {
     return -1;
+  }
   if (num_feeds) {
     json_t *v = json_object_get(content, "num_feeds");
     *num_feeds = json_is_integer(v) ? (int)json_integer_value(v) : 0;
@@ -523,8 +574,9 @@ int api_get_config(ApiClient *c, int *num_feeds) {
 
 static json_t *int_array(const int *ids, size_t n) {
   json_t *arr = json_array();
-  for (size_t i = 0; i < n; i++)
+  for (size_t i = 0; i < n; i++) {
     json_array_append_new(arr, json_integer(ids[i]));
+  }
   return arr;
 }
 
@@ -534,11 +586,13 @@ int api_update_article(ApiClient *c, const int *ids, size_t n, int mode,
   json_object_set_new(p, "article_ids", int_array(ids, n));
   json_object_set_new(p, "mode", json_integer(mode));
   json_object_set_new(p, "field", json_integer(field));
-  if (data)
+  if (data) {
     json_object_set_new(p, "data", json_string(data));
+  }
   json_t *content = api_call(c, "updateArticle", p);
-  if (!content)
+  if (!content) {
     return -1;
+  }
   json_decref(content);
   return 0;
 }
@@ -549,8 +603,9 @@ int api_catchup_feed(ApiClient *c, int feed_id, bool is_cat, const char *mode) {
   json_object_set_new(p, "is_cat", json_boolean(is_cat));
   json_object_set_new(p, "mode", json_string(mode ? mode : "all"));
   json_t *content = api_call(c, "catchupFeed", p);
-  if (!content)
+  if (!content) {
     return -1;
+  }
   json_decref(content);
   return 0;
 }
@@ -562,8 +617,9 @@ int api_set_article_label(ApiClient *c, const int *ids, size_t n, int label_id,
   json_object_set_new(p, "label_id", json_integer(label_id));
   json_object_set_new(p, "assign", json_boolean(assign));
   json_t *content = api_call(c, "setArticleLabel", p);
-  if (!content)
+  if (!content) {
     return -1;
+  }
   json_decref(content);
   return 0;
 }
@@ -573,13 +629,16 @@ int api_subscribe_feed(ApiClient *c, const char *url, int cat_id,
   json_t *p = json_object();
   json_object_set_new(p, "feed_url", json_string(url));
   json_object_set_new(p, "category_id", json_integer(cat_id));
-  if (login)
+  if (login) {
     json_object_set_new(p, "login", json_string(login));
-  if (password)
+  }
+  if (password) {
     json_object_set_new(p, "password", json_string(password));
+  }
   json_t *content = api_call(c, "subscribeToFeed", p);
-  if (!content)
+  if (!content) {
     return -1;
+  }
   json_decref(content);
   return 0;
 }
@@ -588,8 +647,9 @@ int api_unsubscribe_feed(ApiClient *c, int feed_id) {
   json_t *p = json_object();
   json_object_set_new(p, "feed_id", json_integer(feed_id));
   json_t *content = api_call(c, "unsubscribeFeed", p);
-  if (!content)
+  if (!content) {
     return -1;
+  }
   json_decref(content);
   return 0;
 }
@@ -598,8 +658,9 @@ int api_update_feed(ApiClient *c, int feed_id) {
   json_t *p = json_object();
   json_object_set_new(p, "feed_id", json_integer(feed_id));
   json_t *content = api_call(c, "updateFeed", p);
-  if (!content)
+  if (!content) {
     return -1;
+  }
   json_decref(content);
   return 0;
 }

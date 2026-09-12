@@ -27,6 +27,8 @@ void test_config(void) {
                           "  \"username\": \"alice\",\n"
                           "  \"insecure\": true,\n"
                           "  \"timeout_sec\": 12,\n"
+                          "  \"browser\": \"firefox --new-tab\",\n"
+                          "  \"theme\": \"light\",\n"
                           "  \"data_dir\": \"/tmp/tuituirss-data\"\n"
                           "}\n");
   CHECK(path != NULL);
@@ -36,6 +38,8 @@ void test_config(void) {
   CHECK_STR(cfg->username, "alice");
   CHECK(cfg->insecure == true);
   CHECK(cfg->timeout_sec == 12);
+  CHECK_STR(cfg->browser, "firefox --new-tab");
+  CHECK_STR(cfg->theme, "light");
   CHECK_STR(cfg->data_dir, "/tmp/tuituirss-data");
   config_free(cfg);
   unlink(path);
@@ -60,6 +64,8 @@ void test_config(void) {
   /* defaults */
   cfg = config_new();
   CHECK(cfg->timeout_sec == 30);
+  CHECK(cfg->browser != NULL && *cfg->browser);
+  CHECK_STR(cfg->theme, "dark");
   CHECK(cfg->data_dir != NULL && strstr(cfg->data_dir, ".tuituirss") != NULL);
   config_free(cfg);
 }

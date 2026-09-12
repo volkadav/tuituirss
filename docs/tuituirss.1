@@ -1,0 +1,245 @@
+.\" SPDX-License-Identifier: MIT
+.TH TUIIRSS 1 "September 2026" "tuituirss 0.0.1" "User Commands"
+.SH NAME
+tuituirss \- terminal client for Tiny Tiny RSS
+.SH SYNOPSIS
+.B tuituirss
+.RB [ \-c | \-\-config
+.IR path ]
+.RB [ \-\-theme
+.IR name ]
+.RB [ \-\-dark | \-\-light | \-\-mono ]
+.RB [ \-h | \-\-help ]
+.RB [ \-V | \-\-version ]
+.SH DESCRIPTION
+.B tuituirss
+is a fast, keyboard-driven terminal client for the self-hosted
+.B Tiny Tiny RSS
+reader. It talks to an existing tt\-rss server exclusively through the official
+JSON API, so no server\-side changes are required beyond enabling API access for
+your user.
+.PP
+The interface has three panes: a sidebar of virtual feeds, labels and
+categories; a headline list; and an article reader. All network calls are
+synchronous and a one\-line status bar reports progress and errors.
+.PP
+The password is never stored. It is read from the
+.B TTUIRSS_PASSWORD
+environment variable when set, and otherwise prompted for on startup.
+.SH OPTIONS
+.TP
+.BR \-c ", " \-\-config " " \fIpath\fR
+Read configuration from
+.IR path
+instead of the default
+.IR ~/.tuituirssrc.json .
+.TP
+.BR \-\-theme " " \fIname\fR
+Use the named color theme. Valid names are
+.BR dark " (the default), " light ", and " mono .
+The
+.B mono
+theme emits no ANSI color sequences at all and distinguishes state with
+terminal attributes (reverse, bold, dim, underline) only.
+.TP
+.B \-\-dark
+Shorthand for
+.BR "\-\-theme dark" .
+.TP
+.B \-\-light
+Shorthand for
+.BR "\-\-theme light" .
+.TP
+.B \-\-mono
+Shorthand for
+.BR "\-\-theme mono" .
+.TP
+.BR \-h ", " \-\-help
+Print a usage summary and exit.
+.TP
+.BR \-V ", " \-\-version
+Print the version and exit.
+.SH CONFIGURATION
+Configuration is a JSON object, by default read from
+.IR ~/.tuituirssrc.json .
+The following fields are recognized:
+.TP
+.B server_url
+Full URL of the tt\-rss
+.B api/
+endpoint (required).
+.TP
+.B username
+tt\-rss login name (required).
+.TP
+.B data_dir
+Directory for the session cache and logs. Defaults to
+.IR ~/.tuituirss .
+.TP
+.B insecure
+Boolean. When true, TLS certificate verification is skipped. Only use this
+for self\-signed certificates on trusted networks.
+.TP
+.B ca_file
+Optional path to a custom CA bundle.
+.TP
+.B browser
+Command used to open article links. The value is split on whitespace and
+executed directly (without a shell), with the URL appended as the final
+argument, so arguments such as
+.B firefox \-\-new\-tab
+are allowed. Defaults to
+.BR $BROWSER ,
+then
+.B xdg\-open
+on Linux or
+.B open
+on macOS.
+.TP
+.B theme
+Color theme name:
+.BR dark " (default), " light ", or " mono .
+.TP
+.B timeout_sec
+Network timeout in seconds. Defaults to 30.
+.TP
+.B debug
+Boolean. When true, write a debug log (credentials are redacted).
+.TP
+.B log_file
+Log path. Defaults to
+.IR data_dir/tuituirss.log
+when
+.B debug
+is enabled.
+.SH KEY BINDINGS
+The full list is shown in\-app with
+.BR ? .
+The main bindings are:
+.TP
+.BR j ", " k " / " Up ", " Down
+Move the selection down / up in a list.
+.TP
+.BR g ", " G " / " Home ", " End
+Jump to the first / last item.
+.TP
+.BR h ", " l " / " Tab " / " Shift\-Tab
+Move focus between panes.
+.TP
+.B Enter
+Open the selected feed, category, or article.
+.TP
+.B Space
+Load the selected headline into the article pane without changing focus.
+.TP
+.BR Up " / " Right ", " Down " / " Left
+In the article pane, select the next / previous link detected in the post.
+.TP
+.B Enter
+In the article pane, open the selected link in the external browser.
+.TP
+.BR j " / " k " / " PgDn " / " PgUp
+In the article pane, scroll the article.
+.TP
+.BR r ", " s ", " p
+Toggle read/unread, starred, or published.
+.TP
+.B n
+Jump to the next unread headline.
+.TP
+.B x
+Mark the current view (or the selected feed/category) as read.
+.TP
+.B m
+Set a note (an empty value clears it).
+.TP
+.BR + " / " \-
+Increase / decrease the score.
+.TP
+.B L
+Open the label picker.
+.TP
+.B a
+Cycle the view mode.
+.TP
+.B /
+Filter headlines.
+.TP
+.BR A ", " D ", " u
+Subscribe, unsubscribe, or force an update of a feed.
+.TP
+.B o
+Toggle the split / article\-only layout.
+.TP
+.B R
+Refresh the sidebar and current headlines.
+.TP
+.BR q " / " Esc
+Go back one level; quit from the sidebar.
+.TP
+.B ?
+Show the help overlay.
+.SH ENVIRONMENT
+.TP
+.B TTUIRSS_PASSWORD
+Password used for login, skipping the interactive prompt. Useful for scripting.
+.TP
+.B BROWSER
+Default external browser command, used when the
+.B browser
+configuration field is unset.
+.TP
+.B HOME
+Used to locate the default configuration and data directories.
+.TP
+.B TERM
+The terminal type, as usual for curses applications.
+.SH FILES
+.TP
+.I ~/.tuituirssrc.json
+Default configuration file.
+.TP
+.I ~/.tuituirss/
+Default data directory (mode 0700).
+.TP
+.I ~/.tuituirss/session\-<sha1>.json
+Cached session, keyed by a hash of the server URL (mode 0600).
+.TP
+.I ~/.tuituirss/tuituirss.log
+Debug log when
+.B debug
+is enabled.
+.SH EXIT STATUS
+.TP
+.B 0
+Success.
+.TP
+.B 1
+Configuration, initialization, or login failure.
+.TP
+.B 2
+Invalid command\-line usage.
+.SH SECURITY
+Feed and article strings are untrusted. Displayed text is sanitized: control
+characters, bidi overrides and zero\-width marks are removed, invalid UTF\-8 is
+dropped, and article HTML is converted to plain text before display.
+.PP
+URLs are only passed to the configured browser as an
+.BR execvp (3)
+argument (no shell is involved) and only after the user explicitly selects one,
+so feed content cannot inject shell commands or terminal escapes.
+.PP
+TLS verification is on by default and redirects are not followed. The password
+is never written to disk; session files are created mode 0600.
+.SH SEE ALSO
+.BR curl (1),
+.BR ncurses (3)
+.PP
+The project's
+.I README.md
+and
+.I PLAN.md
+describe the design and configuration in more detail.
+.SH LICENSE
+MIT. tuituirss is an independent client that speaks the tt\-rss JSON API and
+contains no tt\-rss code.

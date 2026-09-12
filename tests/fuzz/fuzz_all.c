@@ -5,7 +5,7 @@
  * Build/run:  make fuzz          (requires clang)
  *
  * Feeds arbitrary bytes to the pure functions that consume server/feed data:
- * string sanitisation, HTML→text, UTF-8 helpers, the jansson model parsers and
+ * string sanitization, HTML→text, UTF-8 helpers, the jansson model parsers and
  * the API envelope parser. Compiled with ASan+UBSan by the Makefile.
  */
 #include <jansson.h>
@@ -19,8 +19,9 @@
 #include "util/util.h"
 
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
-  if (size > (1u << 20))
-    return 0; /* keep inputs bounded */
+  if (size > (1u << 20)) {
+    return 0;
+  } /* keep inputs bounded */
 
   char *buf = xmalloc(size + 1);
   memcpy(buf, data, size);
@@ -66,8 +67,9 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   ApiError ae;
   char msg[128];
   json_t *content = NULL;
-  if (api_parse_envelope(buf, &ae, msg, sizeof msg, &content) == 0)
+  if (api_parse_envelope(buf, &ae, msg, sizeof msg, &content) == 0) {
     json_decref(content);
+  }
 
   free(buf);
   return 0;

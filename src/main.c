@@ -23,6 +23,10 @@ static void usage(FILE *out) {
           "\n"
           "Options:\n"
           "  -c, --config PATH   config file (default ~/.tuituirssrc.json)\n"
+          "      --theme NAME    color theme: dark (default), light or mono\n"
+          "      --dark          shorthand for --theme dark\n"
+          "      --light         shorthand for --theme light\n"
+          "      --mono          shorthand for --theme mono (no colors)\n"
           "  -h, --help          show this help\n"
           "  -V, --version       show version\n"
           "\n"
@@ -47,14 +51,17 @@ static char *prompt_password(const char *prompt) {
   fflush(out);
 
   char buf[512] = "";
-  if (!fgets(buf, sizeof buf, in))
+  if (!fgets(buf, sizeof buf, in)) {
     buf[0] = '\0';
+  }
 
-  if (have)
+  if (have) {
     tcsetattr(fileno(in), TCSAFLUSH, &old);
+  }
   fputs("\n", out);
-  if (tty)
+  if (tty) {
     fclose(tty);
+  }
 
   buf[strcspn(buf, "\r\n")] = '\0';
   return xstrdup(buf);
@@ -62,11 +69,20 @@ static char *prompt_password(const char *prompt) {
 
 int main(int argc, char **argv) {
   const char *config_path = NULL;
+  const char *theme_override = NULL;
 
   for (int i = 1; i < argc; i++) {
     if ((strcmp(argv[i], "-c") == 0 || strcmp(argv[i], "--config") == 0) &&
         i + 1 < argc) {
       config_path = argv[++i];
+    } else if (strcmp(argv[i], "--theme") == 0 && i + 1 < argc) {
+      theme_override = argv[++i];
+    } else if (strcmp(argv[i], "--dark") == 0) {
+      theme_override = "dark";
+    } else if (strcmp(argv[i], "--light") == 0) {
+      theme_override = "light";
+    } else if (strcmp(argv[i], "--mono") == 0) {
+      theme_override = "mono";
     } else if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
       usage(stdout);
       return 0;
@@ -84,18 +100,25 @@ int main(int argc, char **argv) {
   Config *cfg = config_new();
   if (config_load_file(cfg, config_path) != 0) {
     fprintf(stderr, "tuituirss: %s\n", cfg->error);
-    if (!config_path)
+    if (!config_path) {
       fprintf(stderr, "Create %s (see tuituirssrc.example.json).\n",
               config_default_path());
+    }
     config_free(cfg);
     return 1;
   }
 
-  if (ensure_private_dir(cfg->data_dir) != 0)
+  if (theme_override) {
+    free(cfg->theme);
+    cfg->theme = xstrdup(theme_override);
+  }
+
+  if (ensure_private_dir(cfg->data_dir) != 0) {
     fprintf(stderr,
             "tuituirss: warning: cannot secure data_dir %s "
             "(session cache and logs may be disabled)\n",
             cfg->data_dir);
+  }
 
   autofree char *log_path = NULL;
   if (cfg->debug) {
@@ -107,7 +130,7 @@ int main(int argc, char **argv) {
   curl_global_init(CURL_GLOBAL_DEFAULT);
   ApiClient *api = api_new(cfg);
   if (!api) {
-    fprintf(stderr, "tuituirss: failed to initialise HTTP client\n");
+    fprintf(stderr, "tuituirss: failed to initialize HTTP client\n");
     config_free(cfg);
     curl_global_cleanup();
     return 1;
@@ -143,9 +166,10 @@ int main(int argc, char **argv) {
     if (api_login(api, cfg->username, pw) != 0) {
       fprintf(stderr, "tuituirss: login failed: %s\n",
               api_last_error_string(api));
-      if (api_last_error(api) == API_ERR_API_DISABLED)
+      if (api_last_error(api) == API_ERR_API_DISABLED) {
         fprintf(stderr,
                 "Enable \"Enable API access\" in tt-rss preferences.\n");
+      }
       api_free(api);
       config_free(cfg);
       curl_global_cleanup();
