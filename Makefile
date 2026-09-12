@@ -23,8 +23,13 @@ CPPFLAGS += -Isrc
 LDLIBS  += $(shell $(PKG_CONFIG) --libs $(PKGS))
 
 # Hardening (override HARDEN_CFLAGS/HARDEN_LDFLAGS to disable).
+# Some hardening flags are target-specific (e.g. -fcf-protection is x86-only),
+# so probe the compiler instead of assuming the host architecture.
+probe_flag = $(shell $(CC) $(1) -E -x c /dev/null >/dev/null 2>&1 && echo $(1))
+STACK_CLASH   := $(call probe_flag,-fstack-clash-protection)
+CF_PROTECTION := $(call probe_flag,-fcf-protection)
 HARDEN_CFLAGS  ?= -D_FORTIFY_SOURCE=2 -fstack-protector-strong \
-                  -fstack-clash-protection -fcf-protection \
+                  $(STACK_CLASH) $(CF_PROTECTION) \
                   -Wformat=2 -Wformat-security -Werror=format-security
 HARDEN_LDFLAGS ?= -Wl,-z,relro,-z,now -fPIE -pie
 CFLAGS  += $(HARDEN_CFLAGS)
