@@ -176,6 +176,10 @@ tuituirss/
 ├── README.md
 ├── .gitignore
 ├── tuituirssrc.example.json
+├── nfpm.yaml.in            # deb/rpm package template (nfpm)
+├── .github/workflows/
+│   ├── ci.yml              # build + test + sanitize + fuzz
+│   └── release.yml         # tag -> deb/rpm artifacts -> GitHub release
 ├── src/
 │   ├── main.c
 │   ├── config/
@@ -374,6 +378,11 @@ document in one place.
 6. **Color themes** — named `dark` (default), `light`, and `mono`. `mono` skips
    color initialization entirely and distinguishes states with attributes
    (reverse, bold, dim, underline) only.
-7. **License** — MIT. tuituirss is an independent client that talks to tt-rss
+7. **Packaging & releases** — `.deb`/`.rpm` packages are built with
+   [nfpm](https://nfpm.goreleaser.com/) from `nfpm.yaml.in` (`make pkg`), with
+   the version taken from `TUIIRSS_VERSION` in `src/main.c`. Pushing a `v*` tag
+   runs the GitHub release workflow, which builds amd64 and arm64 packages and
+   attaches them to the release.
+8. **License** — MIT. tuituirss is an independent client that talks to tt-rss
    over its JSON API and shares no tt-rss code, so tt-rss's GPL-3.0-or-later
    does not apply to it.

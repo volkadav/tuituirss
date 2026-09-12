@@ -1,0 +1,35 @@
+name: tuituirss
+arch: @PKG_ARCH@
+platform: linux
+version: @PKG_VERSION@
+section: news
+priority: optional
+maintainer: Michael Jackson <michael.o.jackson@gmail.com>
+description: |
+  A fast, keyboard-driven terminal client for the self-hosted Tiny Tiny RSS
+  reader. It talks to an existing tt-rss server exclusively through the
+  official JSON API, so no server-side changes are needed beyond enabling API
+  access for your user.
+vendor: tuituirss
+license: MIT
+overrides:
+  deb:
+    depends:
+      - libc6
+      - libcurl4
+      - libjansson4
+      - libncursesw6
+      - libssl3
+  rpm:
+    depends:
+      - glibc
+      - libcurl
+      - jansson
+      - ncurses-libs
+      - openssl-libs
+
+contents:
+  - src: ./tuituirss
+    dst: /usr/bin/tuituirss
+  - src: ./docs/tuituirss.1
+    dst: /usr/share/man/man1/tuituirss.1

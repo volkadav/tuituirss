@@ -1,0 +1,70 @@
+# SPDX-License-Identifier: MIT
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: ${{ matrix.arch }}
+    runs-on: ${{ matrix.os }}
+    container: debian:stable-slim
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            arch: amd64
+          - os: ubuntu-24.04-arm
+            arch: arm64
+
+    steps:
+      - name: Install build tools
+        run: |
+          apt-get update -qq
+          apt-get install -y -qq git build-essential pkg-config \
+            libcurl4-openssl-dev libjansson-dev libncurses-dev libssl-dev \
+            ca-certificates curl
+
+      - uses: actions/checkout@v4
+
+      - name: Install nfpm
+        run: |
+          NFPM_VER=2.46.3
+          curl -sSfL "https://github.com/goreleaser/nfpm/releases/download/v${NFPM_VER}/nfpm_${NFPM_VER}_Linux_${{ matrix.arch == 'amd64' && 'x86_64' || 'arm64' }}.tar.gz" | tar xzf - -C /usr/local/bin nfpm
+          nfpm --version
+
+      - name: Build
+        run: make
+
+      - name: Build packages
+        run: make pkg
+
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages-${{ matrix.arch }}
+          path: |
+            *.deb
+            *.rpm
+
+  release:
+    name: Create Release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/*
+          generate_release_notes: true

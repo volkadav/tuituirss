@@ -61,6 +61,14 @@ make man        # view the tuituirss(1) man page
 make install    # install the binary and man page (PREFIX=/usr/local)
 ```
 
+### Packages
+
+`make pkg` builds a `.deb` and an `.rpm` using
+[nfpm](https://nfpm.goreleaser.com/) (which must be on `PATH`); `make deb` or
+`make rpm` build just one. The version is read from `src/main.c` and the
+architecture from the host (or from `dpkg --print-architecture` when
+available).
+
 ## Configuration
 
 Copy `tuituirssrc.example.json` to `~/.tuituirssrc.json` and edit it:
@@ -132,6 +140,15 @@ The integration test logs in, walks categories → feeds → headlines → artic
 toggles and restores a headline's starred flag, reads counters and labels, then
 logs out. `make fuzz` feeds arbitrary bytes to the HTML/UTF-8/JSON parsers and
 the envelope decoder under ASan/UBSan; tune the duration with `FUZZ_TIME`.
+
+## Releases
+
+Pushing a `v*` tag (for example `v0.0.2`, matching `TUIIRSS_VERSION` in
+`src/main.c`) triggers the
+[release workflow](.github/workflows/release.yml), which builds `.deb` and
+`.rpm` packages for amd64 and arm64 and attaches them to a GitHub release. The
+workflow can also be dispatched manually from the Actions tab to produce
+artifacts without creating a release.
 
 ## Security notes
 

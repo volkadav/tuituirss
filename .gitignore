@@ -6,6 +6,12 @@ tests/unit/run
 tests/integration/run
 tests/fuzz/fuzz
 
+# Packages
+*.deb
+*.rpm
+nfpm-deb.yaml
+nfpm-rpm.yaml
+
 # Editor / OS noise
 *.swp
 *~
