@@ -5,23 +5,7 @@ A fast, keyboard-driven terminal client for the self-hosted
 server exclusively through the official JSON API, so no server-side changes are
 needed beyond enabling API access for your user.
 
-```
-┌──────────────────────────────┬──────────────────────────────────────────────┐
-│ Virtual feeds                │ Headlines                                    │
-│  *Starred               (12) │ o   First headline title          Example Blog│
-│  Published                   │ o*  Second headline                          │
-│  All articles           (340)│  p  Third headline                           │
-│ ── Labels ──                 │                                              │
-│  @work                   (4) │                                              │
-│ ── Feeds ──                  │                                              │
-│  v News                      │                                              │
-│    blog.example.com      (4) │                                              │
-├──────────────────────────────┴──────────────────────────────────────────────┤
-│ Article: title, feed, author, date, link, plain-text content, note, labels  │
-├─────────────────────────────────────────────────────────────────────────────┤
-│ Updated                                        12 unread  Starred  all_articles
-└─────────────────────────────────────────────────────────────────────────────┘
-```
+![tuituirss screenshot](screenshot.png)
 
 ## Features
 
