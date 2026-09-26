@@ -36,6 +36,18 @@ sudo apt install build-essential pkg-config libcurl4-openssl-dev \
     libjansson-dev libncurses-dev libssl-dev
 ```
 
+On macOS (with [Homebrew](https://brew.sh/)):
+
+```sh
+brew install pkg-config jansson openssl@3
+```
+
+`libcurl` and `ncursesw` are provided by Homebrew's built-in `pkg-config`
+shims that point at the system libraries, so only `pkg-config`, `jansson`, and
+OpenSSL need to be installed. The bundled `/usr/bin/make` (GNU Make 3.81) works;
+the Makefile probes the compiler/linker and skips the GNU-only hardening flags
+on macOS.
+
 ## Build
 
 ```sh
@@ -51,7 +63,8 @@ make install    # install the binary and man page (PREFIX=/usr/local)
 [nfpm](https://nfpm.goreleaser.com/) (which must be on `PATH`); `make deb` or
 `make rpm` build just one. The version is read from `src/main.c` and the
 architecture from the host (or from `dpkg --print-architecture` when
-available).
+available). Packaging is Linux-only: on macOS just `make` to build the
+`./tuituirss` binary (see the macOS note under [Dependencies](#dependencies)).
 
 ## Configuration
 
@@ -119,6 +132,18 @@ make fuzz                 # libFuzzer harness for the parsers (needs clang)
 TTRSS_URL=https://host/tt-rss/api/ TTRSS_USER=you TTRSS_PASS=secret \
     RUN_INTEGRATION=1 ./tests/run_tests.sh
 ```
+
+On macOS, Apple's clang ships neither `-fanalyzer` nor the libFuzzer runtime, so
+`make analyze` and `make fuzz` need the Homebrew toolchains instead:
+
+```sh
+brew install gcc llvm
+make CC=gcc-16 analyze                                  # GCC static analyzer
+make fuzz FUZZ_CC=/opt/homebrew/opt/llvm/bin/clang      # libFuzzer
+```
+
+(Adjust the `gcc-*` version to whichever one Homebrew installs; `make test` and
+`make asan` work with Apple's clang as-is.)
 
 The integration test logs in, walks categories → feeds → headlines → article,
 toggles and restores a headline's starred flag, reads counters and labels, then

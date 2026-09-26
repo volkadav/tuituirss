@@ -25,13 +25,21 @@ LDLIBS  += $(shell $(PKG_CONFIG) --libs $(PKGS))
 # Hardening (override HARDEN_CFLAGS/HARDEN_LDFLAGS to disable).
 # Some hardening flags are target-specific (e.g. -fcf-protection is x86-only),
 # so probe the compiler instead of assuming the host architecture.
-probe_flag = $(shell $(CC) $(1) -E -x c /dev/null >/dev/null 2>&1 && echo $(1))
+probe_flag = $(shell $(CC) $(1) -c -x c /dev/null -o /dev/null >/dev/null 2>&1 && echo $(1))
 STACK_CLASH   := $(call probe_flag,-fstack-clash-protection)
 CF_PROTECTION := $(call probe_flag,-fcf-protection)
 HARDEN_CFLAGS  ?= -D_FORTIFY_SOURCE=2 -fstack-protector-strong \
                   $(STACK_CLASH) $(CF_PROTECTION) \
                   -Wformat=2 -Wformat-security -Werror=format-security
+# RELRO + `-z now` are GNU ld features; Apple's ld64 rejects `-z`. macOS
+# already produces PIE (ASLR) executables by default, so nothing extra is
+# needed there.
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Darwin)
+HARDEN_LDFLAGS ?= -fPIE
+else
 HARDEN_LDFLAGS ?= -Wl,-z,relro,-z,now -fPIE -pie
+endif
 CFLAGS  += $(HARDEN_CFLAGS)
 LDFLAGS += $(HARDEN_LDFLAGS)
 
@@ -66,7 +74,7 @@ MANDIR   ?= $(PREFIX)/share/man/man1
 # build one. The version is read from src/main.c, the architecture from the
 # host (or the Debian architecture when dpkg is available).
 NFPM         ?= nfpm
-PKG_VERSION  := $(shell sed -n 's/.*#define TUIIRSS_VERSION "\([^"]*\)".*/\1/p' src/main.c)
+PKG_VERSION  := $(shell sed -n 's/.*\#define TUIIRSS_VERSION "\([^"]*\)".*/\1/p' src/main.c)
 PKG_ARCH_DEB := $(shell dpkg --print-architecture 2>/dev/null || (uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/'))
 PKG_ARCH_RPM := $(shell uname -m)
 
