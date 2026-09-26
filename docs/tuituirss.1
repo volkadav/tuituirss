@@ -120,6 +120,9 @@ The main bindings are:
 .BR j ", " k " / " Up ", " Down
 Move the selection down / up in a list.
 .TP
+.BR PgDn " / " PgUp
+Move the selection down / up by one page in a list.
+.TP
 .BR g ", " G " / " Home ", " End
 Jump to the first / last item.
 .TP
@@ -127,10 +130,12 @@ Jump to the first / last item.
 Move focus between panes.
 .TP
 .B Enter
-Open the selected feed, category, or article.
+Open the selected feed, category, or article. Opening an article also marks it
+as read.
 .TP
 .B Space
-Load the selected headline into the article pane without changing focus.
+Load the selected headline into the article pane without changing focus. The
+headline is marked as read.
 .TP
 .BR Up " / " Right ", " Down " / " Left
 In the article pane, select the next / previous link detected in the post.
@@ -139,7 +144,10 @@ In the article pane, select the next / previous link detected in the post.
 In the article pane, open the selected link in the external browser.
 .TP
 .BR j " / " k " / " PgDn " / " PgUp
-In the article pane, scroll the article.
+In the article pane, scroll the article by one line with
+.BR j " / " k
+or by one page with
+.BR PgDn " / " PgUp .
 .TP
 .BR r ", " s ", " p
 Toggle read/unread, starred, or published.

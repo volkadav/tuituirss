@@ -485,6 +485,15 @@ static void go_back(App *app) {
   }
 }
 
+/* Clear the unread flag when an article is opened, mirroring the change into
+ * the headline list and sidebar counters via mutate(). */
+static void mark_read(App *app, Headline *h) {
+  if (!h || !h->unread) {
+    return;
+  }
+  mutate(app, UA_FIELD_UNREAD, UA_MODE_FALSE, NULL);
+}
+
 static void handle_action(App *app, Action a) {
   switch (a) {
   case ACT_NONE:
@@ -536,6 +545,24 @@ static void handle_action(App *app, Action a) {
       headlines_end(app);
     }
     break;
+  case ACT_PAGE_DOWN:
+    if (app->focus == PANE_ARTICLE) {
+      article_scroll(app, app->art_rows);
+    } else if (app->focus == PANE_FEEDS) {
+      feedlist_move(app, app->side_rows);
+    } else {
+      headlines_move(app, app->head_rows);
+    }
+    break;
+  case ACT_PAGE_UP:
+    if (app->focus == PANE_ARTICLE) {
+      article_scroll(app, -app->art_rows);
+    } else if (app->focus == PANE_FEEDS) {
+      feedlist_move(app, -app->side_rows);
+    } else {
+      headlines_move(app, -app->head_rows);
+    }
+    break;
   case ACT_FOCUS_NEXT:
     focus_next(app);
     break;
@@ -546,13 +573,16 @@ static void handle_action(App *app, Action a) {
     if (app->focus == PANE_FEEDS) {
       feedlist_activate(app);
     } else if (app->focus == PANE_HEADLINES) {
-      headlines_activate(app);
+      Headline *h = headline_current(app);
+      if (headlines_activate(app) == 0) {
+        mark_read(app, h);
+      }
     }
     break;
   case ACT_TOGGLE_ARTICLE: {
     Headline *h = headline_current(app);
-    if (h) {
-      article_load(app, h->id);
+    if (h && article_load(app, h->id) == 0) {
+      mark_read(app, h);
     }
     break;
   }
@@ -611,9 +641,6 @@ static void handle_action(App *app, Action a) {
     break;
   case ACT_HELP:
     dialog_help(app);
-    break;
-  case ACT_LOAD_MORE:
-    headlines_load_more(app);
     break;
   case ACT_LINK_NEXT:
     article_link_move(app, 1);

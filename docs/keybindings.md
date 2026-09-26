@@ -9,6 +9,7 @@ Contexts: **global** (any pane), **sidebar**, **headlines**, **article**.
 |-----|---------|--------|
 | `j` / `Down` | sidebar, headlines | move selection down |
 | `k` / `Up` | sidebar, headlines | move selection up |
+| `PgDn` / `PgUp` | sidebar, headlines | move selection down / up one page |
 | `g` / `Home` | sidebar, headlines | first item |
 | `G` / `End` | sidebar, headlines | last item (loads more headlines if needed) |
 | `l` / `Tab` / `Right` | global | focus next pane |
@@ -17,7 +18,8 @@ Contexts: **global** (any pane), **sidebar**, **headlines**, **article**.
 | `Enter` | sidebar (on a category) | toggle collapsed (`>`) / expanded (`v`) |
 | `Enter` | headlines | open the article |
 | `Space` | headlines | load the selected article without changing focus |
-| `j` / `k` / `PgDn` / `PgUp` | article | scroll the article |
+| `j` / `k` | article | scroll the article one line |
+| `PgDn` / `PgUp` | article | scroll the article one page |
 | `Up` / `Right` | article | select the next detected link |
 | `Down` / `Left` | article | select the previous detected link |
 | `Enter` | article | open the selected link in the external browser |

@@ -67,9 +67,10 @@ static const Binding g_bindings[] = {
     {'?', CTX_GLOBAL, ACT_HELP, "show this help"},
     {'q', CTX_GLOBAL, ACT_QUIT, "back / quit"},
     {27, CTX_GLOBAL, ACT_BACK, "back"},
-    {KEY_NPAGE, CTX_ARTICLE, ACT_DOWN, NULL},
-    {KEY_PPAGE, CTX_ARTICLE, ACT_UP, NULL},
-    {KEY_NPAGE, CTX_HEADLINES, ACT_LOAD_MORE, NULL},
+    {KEY_NPAGE, CTX_LIST, ACT_PAGE_DOWN, "page down"},
+    {KEY_PPAGE, CTX_LIST, ACT_PAGE_UP, "page up"},
+    {KEY_NPAGE, CTX_ARTICLE, ACT_PAGE_DOWN, "scroll article down one page"},
+    {KEY_PPAGE, CTX_ARTICLE, ACT_PAGE_UP, "scroll article up one page"},
     {KEY_RESIZE, CTX_GLOBAL, ACT_REFRESH, NULL},
 };
 
@@ -127,6 +128,10 @@ char *input_help_text(void) {
       snprintf(key, sizeof key, "Home");
     } else if (k == KEY_END) {
       snprintf(key, sizeof key, "End");
+    } else if (k == KEY_NPAGE) {
+      snprintf(key, sizeof key, "PgDn");
+    } else if (k == KEY_PPAGE) {
+      snprintf(key, sizeof key, "PgUp");
     } else if (k == 27) {
       snprintf(key, sizeof key, "Esc");
     } else {
