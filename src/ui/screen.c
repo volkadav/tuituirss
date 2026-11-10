@@ -182,17 +182,71 @@ void app_refresh_counters(App *app) {
   }
 }
 
-static void bump_sidebar_unread(App *app, int feed_id, int delta) {
-  if (delta == 0) {
+static bool headline_has_label(const Headline *h, int label_id) {
+  for (size_t i = 0; i < h->nlabels; i++) {
+    if (h->labels[i].id == label_id) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/* Update every sidebar row whose unread count includes this article: its feed,
+ * the owning category, any matching labels, and the virtual feeds. The row for
+ * the currently displayed feed/category/label is always included so the view
+ * being read stays consistent even when the article data is incomplete. */
+static void bump_sidebar_unread(App *app, const Headline *h, int delta) {
+  if (!h || delta == 0) {
     return;
   }
+
+  int cat_idx = -1;
   for (size_t i = 0; i < app->nitems; i++) {
-    if (app->items[i].kind == SI_ITEM && app->items[i].id == feed_id) {
-      app->items[i].unread += delta;
-      if (app->items[i].unread < 0) {
-        app->items[i].unread = 0;
+    if (app->items[i].kind == SI_ITEM &&
+        app->items[i].source == SRC_FEED && app->items[i].id == h->feed_id) {
+      for (size_t j = i; j-- > 0;) {
+        if (app->items[j].depth == 0) {
+          if (app->items[j].is_cat) {
+            cat_idx = (int)j;
+          }
+          break;
+        }
       }
       break;
+    }
+  }
+
+  for (size_t i = 0; i < app->nitems; i++) {
+    SidebarItem *it = &app->items[i];
+    if (it->kind != SI_ITEM) {
+      continue;
+    }
+    bool affected = false;
+    switch (it->source) {
+    case SRC_FEED:
+      affected = (it->id == h->feed_id);
+      break;
+    case SRC_CATEGORY:
+      affected =
+          ((int)i == cat_idx) || (app->cur_is_cat && it->id == app->cur_id);
+      break;
+    case SRC_LABEL:
+      affected = headline_has_label(h, it->id) ||
+                 (!app->cur_is_cat && it->id == app->cur_id);
+      break;
+    case SRC_VIRTUAL:
+      affected = it->id == FEED_ALL ||
+                 (it->id == FEED_STARRED && h->marked) ||
+                 (it->id == FEED_PUBLISHED && h->published) ||
+                 (!app->cur_is_cat && it->id == app->cur_id);
+      break;
+    }
+    if (!affected) {
+      continue;
+    }
+    it->unread += delta;
+    if (it->unread < 0) {
+      it->unread = 0;
     }
   }
 }
@@ -256,7 +310,7 @@ static void mutate(App *app, int field, int mode, const char *data) {
   }
 
   if (field == UA_FIELD_UNREAD && h->unread != was_unread) {
-    bump_sidebar_unread(app, app->cur_id, h->unread ? 1 : -1);
+    bump_sidebar_unread(app, h, h->unread ? 1 : -1);
   }
 
   if (field == UA_FIELD_NOTE) {
